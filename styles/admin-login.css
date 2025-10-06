@@ -1,0 +1,304 @@
+/* Admin Login Professional Theme */
+
+.admin-auth-shell {
+  position:relative;
+  min-height:100vh;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  color:#E5ECF4;
+  overflow:hidden;
+  background:#0C1218;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 28px;
+}
+
+.admin-auth-gradient {
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(60,110,170,0.25), transparent 60%),
+    radial-gradient(circle at 85% 75%, rgba(70,130,190,0.18), transparent 65%),
+    linear-gradient(160deg,#0D141C,#111C27 55%, #0D141C);
+  pointer-events:none;
+  opacity:.9;
+}
+
+.admin-auth-backdrop {
+  position:absolute;
+  inset:0;
+  background-image:
+    repeating-linear-gradient(135deg,rgba(255,255,255,0.02) 0 2px,transparent 2px 6px),
+    linear-gradient(180deg,rgba(255,255,255,0.03),transparent);
+  mix-blend-mode:overlay;
+  pointer-events:none;
+}
+
+.admin-auth-wrapper {
+  position:relative;
+  z-index:5;
+  width:100%;
+  max-width:930px;
+  background:rgba(20,31,43,0.78);
+  border:1px solid rgba(70,110,160,0.25);
+  border-radius:26px;
+  padding:48px 54px 40px;
+  backdrop-filter:blur(18px) saturate(145%);
+  box-shadow:
+    0 18px 42px -15px rgba(0,0,0,.65),
+    0 4px 18px -8px rgba(0,0,0,.55),
+    inset 0 0 0 1px rgba(255,255,255,0.02);
+  display:grid;
+  grid-template-columns: minmax(320px, 420px) minmax(280px, 1fr);
+  gap:46px;
+}
+
+@media (max-width: 980px) {
+  .admin-auth-wrapper {
+    grid-template-columns: 1fr;
+    padding:42px 36px 36px;
+    max-width:640px;
+  }
+}
+
+.admin-auth-header {
+  grid-column:1 / span 1;
+  display:flex;
+  gap:18px;
+  align-items:flex-start;
+  margin-bottom:10px;
+}
+
+.brand-icon {
+  width:64px;
+  height:64px;
+  border-radius:18px;
+  background:
+    linear-gradient(160deg,#284463,#1A2C40);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.9rem;
+  box-shadow:0 6px 18px -6px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,0.06);
+}
+
+.brand-text h1 {
+  margin:4px 0 6px;
+  font-size:1.9rem;
+  font-weight:600;
+  letter-spacing:.6px;
+  background:linear-gradient(90deg,#E4EEF7,#C5D3E1 45%,#9BB5CC);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+
+.brand-text h1 span {
+  color:#76A9E6;
+  background:linear-gradient(90deg,#6CA2E0,#4F81BC);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+
+.tagline {
+  margin:0;
+  font-size:.8rem;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:#7EA2C1;
+  font-weight:500;
+}
+
+.admin-auth-form {
+  grid-column:1;
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+  position:relative;
+}
+
+.form-field label {
+  display:block;
+  font-size:.7rem;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+  font-weight:600;
+  color:#86A5C2;
+}
+
+.input-wrapper {
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+
+.input-wrapper .input-icon {
+  position:absolute;
+  left:12px;
+  font-size:.9rem;
+  opacity:.55;
+  pointer-events:none;
+  transition:.2s;
+}
+
+.input-wrapper input {
+  width:100%;
+  background:#121C27;
+  border:1px solid #2C3E52;
+  color:#E7EEF4;
+  padding:13px 14px 13px 40px;
+  font-size:.9rem;
+  border-radius:12px;
+  outline:none;
+  transition:.22s;
+  font-weight:500;
+  letter-spacing:.4px;
+}
+
+.input-wrapper input:focus {
+  border-color:#4B86D8;
+  background:#162536;
+  box-shadow:0 0 0 3px rgba(75,134,216,0.25);
+}
+
+.input-wrapper input:focus + .password-toggle,
+.input-wrapper input:focus ~ .input-icon {
+  opacity:.85;
+}
+
+.auth-message {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:.75rem;
+  padding:12px 14px;
+  border-radius:12px;
+  background:#2E1C1C;
+  border:1px solid #5A2E30;
+  color:#E9C5C5;
+  letter-spacing:.4px;
+  animation:fadeIn .3s ease;
+}
+
+.auth-message.error span { font-size:.9rem; }
+
+.auth-submit-btn {
+  background:linear-gradient(90deg,#2F5F9B,#3D79C0);
+  color:#fff;
+  font-size:.9rem;
+  font-weight:600;
+  letter-spacing:.6px;
+  padding:15px 22px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:.28s;
+  box-shadow:0 6px 18px -8px rgba(0,0,0,.55), 0 2px 6px -2px rgba(0,0,0,.4);
+  position:relative;
+}
+
+.auth-submit-btn:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+  filter:grayscale(.4);
+}
+
+.auth-submit-btn:not(:disabled):hover {
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px -10px rgba(26,75,140,.55), 0 3px 10px -3px rgba(0,0,0,.55);
+}
+
+.auth-footer-links {
+  margin-top:4px;
+  text-align:left;
+}
+
+.auth-footer-links .back-link {
+  color:#7CA9E3;
+  font-size:.75rem;
+  letter-spacing:.5px;
+  text-decoration:none;
+  font-weight:500;
+}
+
+.auth-footer-links .back-link:hover {
+  text-decoration:underline;
+  color:#A9C9F0;
+}
+
+.admin-auth-footer {
+  grid-column:2;
+  display:flex;
+  flex-direction:column;
+  gap:30px;
+  padding-top:6px;
+}
+
+@media (max-width:980px) {
+  .admin-auth-footer {
+    grid-column:1;
+    margin-top:12px;
+    border-top:1px solid rgba(255,255,255,0.05);
+    padding-top:24px;
+    flex-direction:row;
+    flex-wrap:wrap;
+    gap:18px;
+  }
+}
+
+.foot-col h4 {
+  margin:0 0 6px;
+  font-size:.65rem;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  color:#87A7C8;
+  font-weight:600;
+}
+
+.foot-col p {
+  margin:0;
+  font-size:.7rem;
+  line-height:1.4;
+  color:#A8C0D7;
+  max-width:260px;
+}
+
+.shake {
+  animation:shake .45s cubic-bezier(.36,.07,.19,.97) both;
+  transform:translate3d(0,0,0);
+  backface-visibility:hidden;
+  perspective:1000px;
+}
+
+@keyframes shake {
+  10%, 90% { transform:translateX(-2px); }
+  20%, 80% { transform:translateX(4px); }
+  30%, 50%, 70% { transform:translateX(-6px); }
+  40%, 60% { transform:translateX(6px); }
+}
+
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(-4px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* Scrollbar aesthetics within container (if needed) */
+.admin-auth-wrapper::-webkit-scrollbar {
+  width:10px;
+}
+.admin-auth-wrapper::-webkit-scrollbar-track {
+  background:rgba(255,255,255,0.04);
+  border-radius:10px;
+}
+.admin-auth-wrapper::-webkit-scrollbar-thumb {
+  background:linear-gradient(180deg,#2B4C72,#233B57);
+  border-radius:10px;
+  border:2px solid rgba(0,0,0,0.25);
+}
+.admin-auth-wrapper::-webkit-scrollbar-thumb:hover {
+  background:linear-gradient(180deg,#386395,#2B4C72);
+}
