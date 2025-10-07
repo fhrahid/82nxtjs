@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import RosterTable from '../Shared/RosterTable';
+import ShiftView from '../ShiftView';
 
 interface Props { id: string; }
 
@@ -9,6 +10,8 @@ export default function AdminDataTab({id}:Props) {
   const [googleData,setGoogleData]=useState<any>(null);
   const [loading,setLoading]=useState(false);
   const [saving,setSaving]=useState(false);
+  const [resetting,setResetting]=useState(false);
+  const [showShiftView,setShowShiftView]=useState(false);
 
   const [teamFilter,setTeamFilter]=useState<string>('ALL');
   const [employeeFilter,setEmployeeFilter]=useState<string>('ALL');
@@ -74,6 +77,19 @@ export default function AdminDataTab({id}:Props) {
   function prevMonth() { setMonthLabel('Previous Month (stub)'); }
   function nextMonth() { setMonthLabel('Next Month (stub)'); }
 
+  async function resetToGoogle() {
+    if (!confirm('Reset admin data to Google spreadsheet data? This will remove all manual overrides.')) return;
+    setResetting(true);
+    const res = await fetch('/api/admin/reset-to-google',{method:'POST'}).then(r=>r.json());
+    setResetting(false);
+    if (!res.success) {
+      alert(res.error||'Reset failed');
+    } else {
+      alert('Admin data reset successfully!');
+      load();
+    }
+  }
+
   return (
     <div id={id} className="adm-dark-root">
       <h2 className="adm-title">Admin Data (Editable)</h2>
@@ -89,6 +105,12 @@ export default function AdminDataTab({id}:Props) {
           <button className="adm-btn nav" onClick={nextMonth} disabled={loading}>Next Month →</button>
           <button className="adm-btn refresh" onClick={load} disabled={loading || saving}>
             {loading ? 'Loading…' : saving ? 'Saving…' : '🔄 Refresh'}
+          </button>
+          <button className="adm-btn view" onClick={()=>setShowShiftView(true)} disabled={loading || !adminData}>
+            👁️ Shift View
+          </button>
+          <button className="adm-btn reset" onClick={resetToGoogle} disabled={loading || saving || resetting || !googleData}>
+            {resetting ? 'Resetting…' : '↺ Reset to Google'}
           </button>
         </div>
       </div>
@@ -133,6 +155,15 @@ export default function AdminDataTab({id}:Props) {
             onUpdateShift={updateShift}
           />
         </div>
+      )}
+
+      {adminData && (
+        <ShiftView
+          open={showShiftView}
+          onClose={()=>setShowShiftView(false)}
+          roster={adminData}
+          headers={adminData.headers || []}
+        />
       )}
 
       <style jsx>{`
@@ -186,6 +217,10 @@ export default function AdminDataTab({id}:Props) {
         .adm-btn.nav:hover { background:#236193; }
         .adm-btn.refresh { background:var(--green); border-color:#2f8b60; }
         .adm-btn.refresh:hover { background:var(--green-hover); }
+        .adm-btn.view { background:#3a6599; border-color:#5383bb; }
+        .adm-btn.view:hover { background:#4a7ab0; }
+        .adm-btn.reset { background:#8f3e3e; border-color:#a34b4b; }
+        .adm-btn.reset:hover { background:#a54848; }
         .adm-btn:disabled { opacity:.55; cursor:not-allowed; }
 
         .adm-filters {
