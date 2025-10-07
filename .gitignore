@@ -33,3 +33,8 @@ coverage
 # Data persistence (keep if you commit sample)
 # Uncomment the next line to ignore runtime data changes
 # data/*.json
+
+# Backups
+backups
+*backup*.tsx
+*backup*.ts
