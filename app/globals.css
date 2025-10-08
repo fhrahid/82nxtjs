@@ -146,6 +146,20 @@ a:hover { text-decoration:underline; }
 
 .inline-loading { margin-top:10px; color:var(--text-dim); font-size:.85rem; }
 
+/* Spinning animation for refresh icons */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .input, input, select, textarea {
   background:var(--panel-accent);
   border:1px solid var(--border);
