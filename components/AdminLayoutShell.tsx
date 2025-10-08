@@ -14,17 +14,25 @@ import {
 } from 'lucide-react';
 import { ThemeProvider, useTheme, themes } from '@/contexts/ThemeContext';
 
-const tabs = [
+// Bottom tabs for mobile (main functionality)
+const bottomTabs = [
   { id:'dashboard', label:'Dashboard', icon: LayoutDashboard},
   { id:'schedule-requests', label:'Schedule Requests', icon: Calendar},
-  { id:'team-management', label:'Team Management', icon: Users},
-  { id:'user-management', label:'User Management', icon: Lock},
-  { id:'profile', label:'My Profile', icon: User},
   { id:'data-sync', label:'Data Sync', icon: RefreshCw},
   { id:'google-links', label:'Google Sheets', icon: Link},
   { id:'roster-data', label:'Roster Data', icon: BarChart3},
   { id:'csv-import', label:'CSV Import', icon: FileUp}
 ];
+
+// Top tabs for mobile (management)
+const topTabs = [
+  { id:'profile', label:'My Profile', icon: User},
+  { id:'team-management', label:'Team Management', icon: Users},
+  { id:'user-management', label:'User Management', icon: Lock}
+];
+
+// All tabs for desktop
+const tabs = [...bottomTabs, ...topTabs];
 
 function AdminLayoutContent({children, adminUser, userRole}:{children:React.ReactNode, adminUser:string, userRole?:string}) {
   const [active,setActive]=useState('dashboard');
@@ -66,6 +74,7 @@ function AdminLayoutContent({children, adminUser, userRole}:{children:React.Reac
 
   return (
     <div className="admin-layout-modern">
+      {/* Desktop Sidebar */}
       <aside className={`admin-sidebar ${collapsed?'collapsed':''}`}>
         <div className="admin-sidebar-header">
           <div className="admin-logo" style={{display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center'}}>
@@ -175,13 +184,34 @@ function AdminLayoutContent({children, adminUser, userRole}:{children:React.Reac
         <header className="admin-content-header">
           <h1>{tabs.find(t => t.id === active)?.label || 'Dashboard'}</h1>
           <div className="header-actions">
+            {/* Mobile Top-Right Management Tabs */}
+            <div className="mobile-top-tabs">
+              {topTabs.map(t=>{
+                // Hide User Management tab for non-admin roles
+                if (t.id === 'user-management' && userRole !== 'super_admin' && userRole !== 'admin') {
+                  return null;
+                }
+                const IconComponent = t.icon;
+                return (
+                  <button 
+                    key={t.id} 
+                    className={`mobile-top-tab ${active===t.id?'active':''}`} 
+                    onClick={()=>setActive(t.id)}
+                    title={t.label}
+                  >
+                    <IconComponent size={20} />
+                  </button>
+                );
+              })}
+            </div>
+            
             <div className="theme-switcher-container" style={{position: 'relative'}} ref={themeMenuRef}>
               <button 
                 className="btn small theme-switcher-btn" 
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
                 title="Change Theme"
               >
-                <Palette size={16} /> Change Theme
+                <Palette size={16} /> <span className="desktop-only">Change Theme</span>
               </button>
               {showThemeMenu && (
                 <div className="theme-menu">
@@ -204,7 +234,7 @@ function AdminLayoutContent({children, adminUser, userRole}:{children:React.Reac
                 </div>
               )}
             </div>
-            <span className="timestamp">{new Date().toLocaleDateString('en-US', { 
+            <span className="timestamp desktop-only">{new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 
@@ -223,6 +253,24 @@ function AdminLayoutContent({children, adminUser, userRole}:{children:React.Reac
             );
           }): children}
         </div>
+        
+        {/* Mobile Bottom Tab Navigation */}
+        <nav className="mobile-bottom-tabs">
+          {bottomTabs.map(t=>{
+            const IconComponent = t.icon;
+            return (
+              <button 
+                key={t.id} 
+                className={`mobile-bottom-tab ${active===t.id?'active':''}`} 
+                onClick={()=>setActive(t.id)}
+                title={t.label}
+              >
+                <IconComponent size={22} />
+                <span className="tab-label">{t.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </main>
     </div>
   );
@@ -231,7 +279,9 @@ function AdminLayoutContent({children, adminUser, userRole}:{children:React.Reac
 export default function AdminLayoutShell({children, adminUser, userRole}:{children:React.ReactNode, adminUser:string, userRole?:string}) {
   return (
     <ThemeProvider>
-      <AdminLayoutContent children={children} adminUser={adminUser} userRole={userRole} />
+      <AdminLayoutContent adminUser={adminUser} userRole={userRole}>
+        {children}
+      </AdminLayoutContent>
     </ThemeProvider>
   );
 }
