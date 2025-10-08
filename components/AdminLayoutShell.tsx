@@ -1,21 +1,36 @@
 "use client";
 import { useState } from 'react';
+import { 
+  LayoutDashboard, 
+  Calendar, 
+  Users, 
+  Lock, 
+  User, 
+  RefreshCw, 
+  Link, 
+  BarChart3, 
+  FileUp,
+  Palette
+} from 'lucide-react';
+import { ThemeProvider, useTheme, themes } from '@/contexts/ThemeContext';
 
 const tabs = [
-  { id:'dashboard', label:'📊 Dashboard'},
-  { id:'schedule-requests', label:'📋 Schedule Requests'},
-  { id:'team-management', label:'👥 Team Management'},
-  { id:'user-management', label:'🔐 User Management'},
-  { id:'profile', label:'👤 My Profile'},
-  { id:'data-sync', label:'🔄 Data Sync'},
-  { id:'google-links', label:'🔗 Google Sheets'},
-  { id:'roster-data', label:'📊 Roster Data'},
-  { id:'csv-import', label:'📂 CSV Import'}
+  { id:'dashboard', label:'Dashboard', icon: LayoutDashboard},
+  { id:'schedule-requests', label:'Schedule Requests', icon: Calendar},
+  { id:'team-management', label:'Team Management', icon: Users},
+  { id:'user-management', label:'User Management', icon: Lock},
+  { id:'profile', label:'My Profile', icon: User},
+  { id:'data-sync', label:'Data Sync', icon: RefreshCw},
+  { id:'google-links', label:'Google Sheets', icon: Link},
+  { id:'roster-data', label:'Roster Data', icon: BarChart3},
+  { id:'csv-import', label:'CSV Import', icon: FileUp}
 ];
 
-export default function AdminLayoutShell({children, adminUser}:{children:React.ReactNode, adminUser:string}) {
+function AdminLayoutContent({children, adminUser}:{children:React.ReactNode, adminUser:string}) {
   const [active,setActive]=useState('dashboard');
   const [collapsed,setCollapsed]=useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const { currentTheme, setTheme } = useTheme();
 
   return (
     <div className="admin-layout-modern">
@@ -34,16 +49,20 @@ export default function AdminLayoutShell({children, adminUser}:{children:React.R
         </button>
         
         <nav className="admin-sidebar-nav">
-          {tabs.map(t=>(
-            <button 
-              key={t.id} 
-              className={`sidebar-nav-item ${active===t.id?'active':''}`} 
-              onClick={()=>setActive(t.id)}
-              title={collapsed ? t.label : ''}
-            >
-              {t.label}
-            </button>
-          ))}
+          {tabs.map(t=>{
+            const IconComponent = t.icon;
+            return (
+              <button 
+                key={t.id} 
+                className={`sidebar-nav-item ${active===t.id?'active':''}`} 
+                onClick={()=>setActive(t.id)}
+                title={collapsed ? t.label : ''}
+              >
+                <IconComponent size={20} />
+                {!collapsed && <span>{t.label}</span>}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -73,6 +92,35 @@ export default function AdminLayoutShell({children, adminUser}:{children:React.R
         <header className="admin-content-header">
           <h1>{tabs.find(t => t.id === active)?.label || 'Dashboard'}</h1>
           <div className="header-actions">
+            <div className="theme-switcher-container" style={{position: 'relative'}}>
+              <button 
+                className="btn small theme-switcher-btn" 
+                onClick={() => setShowThemeMenu(!showThemeMenu)}
+                title="Change Theme"
+              >
+                <Palette size={16} /> Change Theme
+              </button>
+              {showThemeMenu && (
+                <div className="theme-menu">
+                  {themes.map(theme => (
+                    <button
+                      key={theme.id}
+                      className={`theme-option ${currentTheme.id === theme.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setTheme(theme.id);
+                        setShowThemeMenu(false);
+                      }}
+                    >
+                      <div 
+                        className="theme-preview" 
+                        style={{background: theme.colors.primary}}
+                      />
+                      {theme.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <span className="timestamp">{new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 
               year: 'numeric', 
@@ -94,5 +142,13 @@ export default function AdminLayoutShell({children, adminUser}:{children:React.R
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AdminLayoutShell({children, adminUser}:{children:React.ReactNode, adminUser:string}) {
+  return (
+    <ThemeProvider>
+      <AdminLayoutContent children={children} adminUser={adminUser} />
+    </ThemeProvider>
   );
 }

@@ -8,6 +8,8 @@ interface Request {
   type: 'shift_change'|'swap';
   status: string;
   created_at: string;
+  approved_at?: string | null;
+  approved_by?: string | null;
   employee_id?: string;
   employee_name?: string;
   team: string;
@@ -29,6 +31,7 @@ export default function ScheduleRequestsTab({id}:Props) {
   const [stats,setStats]=useState<any>({});
   const [loading,setLoading]=useState(false);
   const [viewAll,setViewAll]=useState(false);
+  const [filter,setFilter]=useState<'all'|'pending'|'approved'|'shift_change'|'swap'>('all');
 
   async function load() {
     setLoading(true);
@@ -40,6 +43,15 @@ export default function ScheduleRequestsTab({id}:Props) {
     const allRes = await fetch('/api/schedule-requests/get-all').then(r=>r.json());
     if (allRes.success) setAllRequests(allRes.all_requests);
     setLoading(false);
+  }
+
+  function getFilteredRequests() {
+    if (filter === 'all') return allRequests;
+    if (filter === 'pending') return allRequests.filter(r => r.status === 'pending');
+    if (filter === 'approved') return allRequests.filter(r => r.status === 'approved');
+    if (filter === 'shift_change') return allRequests.filter(r => r.type === 'shift_change');
+    if (filter === 'swap') return allRequests.filter(r => r.type === 'swap');
+    return allRequests;
   }
 
   async function act(id:string, status:'approved'|'rejected') {
@@ -68,6 +80,14 @@ export default function ScheduleRequestsTab({id}:Props) {
         <td className="truncate reason-cell" title={r.reason}>{r.reason}</td>
         <td>{new Date(r.created_at).toLocaleString()}</td>
         <td>
+          {r.approved_by ? (
+            <div style={{fontSize: '0.75rem'}}>
+              <div>{r.approved_by}</div>
+              <div style={{color: '#7E90A8'}}>{r.approved_at ? new Date(r.approved_at).toLocaleString() : ''}</div>
+            </div>
+          ) : '-'}
+        </td>
+        <td>
           {pending &&
             <>
               <button className="btn success tiny" onClick={()=>act(r.id,'approved')}>Approve</button>
@@ -93,38 +113,55 @@ export default function ScheduleRequestsTab({id}:Props) {
         <button className="btn small" onClick={load}>🔄 Refresh</button>
         <button className="btn small" onClick={()=>setViewAll(!viewAll)}>{viewAll? 'Hide All':'View All'}</button>
       </div>
-      <h3>Pending Requests</h3>
+
+      {/* Filter Buttons */}
+      <div className="filter-bar" style={{marginBottom: 20, display: 'flex', gap: 10, flexWrap: 'wrap'}}>
+        <button 
+          className={`btn small ${filter==='all'?'primary':''}`} 
+          onClick={()=>setFilter('all')}
+        >
+          All Requests
+        </button>
+        <button 
+          className={`btn small ${filter==='pending'?'primary':''}`} 
+          onClick={()=>setFilter('pending')}
+        >
+          Pending
+        </button>
+        <button 
+          className={`btn small ${filter==='approved'?'primary':''}`} 
+          onClick={()=>setFilter('approved')}
+        >
+          Approved
+        </button>
+        <button 
+          className={`btn small ${filter==='shift_change'?'primary':''}`} 
+          onClick={()=>setFilter('shift_change')}
+        >
+          Shift Changes
+        </button>
+        <button 
+          className={`btn small ${filter==='swap'?'primary':''}`} 
+          onClick={()=>setFilter('swap')}
+        >
+          Swaps
+        </button>
+      </div>
+
+      <h3>{filter === 'all' ? 'All Requests' : filter === 'pending' ? 'Pending Requests' : filter === 'approved' ? 'Approved Requests' : filter === 'shift_change' ? 'Shift Change Requests' : 'Swap Requests'}</h3>
       <div className="table-wrapper">
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th><th>Type</th><th>Team</th><th>Date</th><th>Shift(s)</th><th>Status</th><th>Reason</th><th>Created</th><th>Actions</th>
+              <th>ID</th><th>Type</th><th>Team</th><th>Date</th><th>Shift(s)</th><th>Status</th><th>Reason</th><th>Created</th><th>Approved By</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {pending.length===0 && <tr><td colSpan={9}>No pending requests</td></tr>}
-            {pending.map(r=>renderRow(r,true))}
+            {getFilteredRequests().length===0 && <tr><td colSpan={10}>No requests found</td></tr>}
+            {getFilteredRequests().map(r=>renderRow(r, r.status==='pending'))}
           </tbody>
         </table>
       </div>
-      {viewAll &&
-        <>
-          <h3 style={{marginTop:30}}>All Requests</h3>
-          <div className="table-wrapper">
-            <table className="data-table compact">
-              <thead>
-                <tr>
-                  <th>ID</th><th>Type</th><th>Team</th><th>Date</th><th>Shift(s)</th><th>Status</th><th>Reason</th><th>Created</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allRequests.length===0 && <tr><td colSpan={9}>No requests submitted yet</td></tr>}
-                {allRequests.map(r=>renderRow(r,false))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      }
       {loading && <div className="inline-loading">Loading requests...</div>}
       <div className="note-box">
         Approving a shift change updates the admin schedule; approving a swap swaps the two employees’ shifts for that date.
