@@ -25,8 +25,6 @@ export default function RosterDataTab({id}:Props) {
   // Google Sheets Roster Modal state
   const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
 
-  const [monthLabel,setMonthLabel]=useState<string>('Current Month');
-
   async function load() {
     setLoading(true);
     const aRes = await fetch('/api/admin/get-admin-data');
@@ -154,11 +152,6 @@ export default function RosterDataTab({id}:Props) {
     }
   }
 
-
-
-  function prevMonth() { setMonthLabel('Previous Month (stub)'); }
-  function nextMonth() { setMonthLabel('Next Month (stub)'); }
-
   async function resetToGoogleOrCSV() {
     if (!confirm('Reset admin data to Google spreadsheet or CSV data? This will remove all manual overrides.')) return;
     setResetting(true);
@@ -180,10 +173,7 @@ export default function RosterDataTab({id}:Props) {
       </p>
 
       <div className="rd-bar">
-        <button className="rd-btn nav" onClick={prevMonth} disabled={loading}>← Previous Month</button>
-        <div className="rd-month">{monthLabel}</div>
         <div className="rd-bar-actions">
-          <button className="rd-btn nav" onClick={nextMonth} disabled={loading}>Next Month →</button>
           <button className="rd-btn refresh" onClick={load} disabled={loading || saving}>
             {loading ? 'Loading…' : saving ? 'Saving…' : '🔄 Refresh'}
           </button>
@@ -216,6 +206,7 @@ export default function RosterDataTab({id}:Props) {
                 selectedDate={selectedDate}
                 onSelect={(d)=> setSelectedDate(d)}
                 showWeekdays
+                showNavigation
               />
             </div>
             
@@ -426,11 +417,10 @@ export default function RosterDataTab({id}:Props) {
           border-radius:12px;
           display:flex;
           align-items:center;
-          justify-content:space-between;
+          justify-content:flex-end;
           gap:18px;
           margin-bottom:14px;
         }
-        .rd-month { font-weight:600; letter-spacing:.5px; }
         .rd-bar-actions { display:flex; gap:10px; }
 
         .rd-btn {
