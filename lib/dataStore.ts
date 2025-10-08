@@ -76,14 +76,19 @@ export function updateAdminTeamStructure() {
 }
 
 function rebuildAllEmployees(data: RosterData) {
-  const all: any[] = [];
+  const employeeMap = new Map<string, any>();
+  
+  // Use a Map to deduplicate by employee ID, keeping the most recent team
   Object.entries(data.teams).forEach(([team, emps])=>{
     emps.forEach(e=>{
       e.currentTeam = team;
-      all.push(e);
+      e.team = team;
+      // This will overwrite any previous entry with the same ID
+      employeeMap.set(e.id, e);
     });
   });
-  data.allEmployees = all;
+  
+  data.allEmployees = Array.from(employeeMap.values());
 }
 
 export function mergeDisplay() {
