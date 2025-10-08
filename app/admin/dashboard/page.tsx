@@ -6,8 +6,7 @@ import TeamManagementTab from '@/components/AdminTabs/TeamManagementTab';
 import UserManagementTab from '@/components/AdminTabs/UserManagementTab';
 import ProfileTab from '@/components/AdminTabs/ProfileTab';
 import ScheduleRequestsTab from '@/components/AdminTabs/ScheduleRequestsTab';
-import GoogleDataTab from '@/components/AdminTabs/GoogleDataTab';
-import AdminDataTab from '@/components/AdminTabs/AdminDataTab';
+import RosterDataTab from '@/components/AdminTabs/RosterDataTab';
 import CsvImportTab from '@/components/AdminTabs/CsvImportTab';
 import ModifiedShiftsTab from '@/components/AdminTabs/ModifiedShiftsTab';
 import { getSessionUser } from '@/lib/auth';
@@ -26,8 +25,7 @@ export default function AdminDashboardPage() {
       <ProfileTab id="profile" currentUser={user} />
       <DataSyncTab id="data-sync" />
       <GoogleLinksTab id="google-links" />
-      <GoogleDataTab id="google-data" />
-      <AdminDataTab id="admin-data" />
+      <RosterDataTab id="roster-data" />
       <CsvImportTab id="csv-import" />
     </AdminLayoutShell>
   );
