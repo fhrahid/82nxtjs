@@ -263,12 +263,25 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
       <ParticleBackground />
       <header style={{position: 'relative', zIndex: 1}}>
         <h1>🛒 Cartup CxP Roster Viewer 🛒</h1>
-        <p className="subtitle">Employee Schedule Portal</p>
+        <p className="subtitle">
+          Employee Schedule Portal
+          <span style={{
+            fontSize: '0.65rem', 
+            marginLeft: '12px', 
+            opacity: 0.7,
+            background: 'linear-gradient(90deg, #4A9EFF, #6B5CFF)',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontWeight: 500
+          }}>
+            Developed by Efat Anan Shekh
+          </span>
+        </p>
       </header>
       <div className="app-container" style={{position: 'relative', zIndex: 1}} key={rerenderKey}>
         <div className="app-header">
           <div>
-            <h2>Shift Dashboard <small style={{fontSize:'.6rem', opacity:.6}}>mode:{mode}</small></h2>
+            <h2>Shift Dashboard</h2>
             <div className="user-info" style={{display:'flex', flexDirection:'column', gap:6}}>
               <span>Welcome, <strong>{fullName}</strong> ({employeeId})</span>
               <div className="user-actions" style={{display:'flex', gap:10, flexWrap:'wrap'}}>

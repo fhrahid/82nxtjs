@@ -325,16 +325,17 @@ export function SwapRequestModal(props:SwapRequestModalProps) {
   async function submit() {
     if (!canSubmit) return;
     setLoading(true);
-    const res = await fetch('/api/schedule-requests/submit-swap',{
+    const res = await fetch('/api/schedule-requests/submit-swap-request',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         requesterId,
         requesterName,
+        targetEmployeeId,
+        targetEmployeeName: targetMember?.name || '',
         team,
         date: selectedDate,
         requesterShift: derivedRequesterShift,
-        targetEmployeeId,
         targetShift,
         reason
       })
