@@ -9,15 +9,18 @@ import ScheduleRequestsTab from '@/components/AdminTabs/ScheduleRequestsTab';
 import RosterDataTab from '@/components/AdminTabs/RosterDataTab';
 import CsvImportTab from '@/components/AdminTabs/CsvImportTab';
 import ModifiedShiftsTab from '@/components/AdminTabs/ModifiedShiftsTab';
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, getSessionUserData } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default function AdminDashboardPage() {
   const user = getSessionUser();
   if (!user) redirect('/admin/login');
+  
+  const userData = getSessionUserData();
+  const userRole = userData?.role || 'admin';
 
   return (
-    <AdminLayoutShell adminUser={user}>
+    <AdminLayoutShell adminUser={user} userRole={userRole}>
       <DashboardTab id="dashboard" />
       <ScheduleRequestsTab id="schedule-requests" />
       <TeamManagementTab id="team-management" />

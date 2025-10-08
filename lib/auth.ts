@@ -44,6 +44,19 @@ export function getSessionUser(): string|null {
   }
 }
 
+export function getSessionUserData(): AdminUser | null {
+  const username = getSessionUser();
+  if (!username) return null;
+  
+  try {
+    const adminUsers = getAdminUsers();
+    const user = adminUsers.users.find(u => u.username === username);
+    return user || null;
+  } catch {
+    return null;
+  }
+}
+
 export function requireAdmin(): string {
   const u = getSessionUser();
   if (!u) throw new Error("Unauthorized");

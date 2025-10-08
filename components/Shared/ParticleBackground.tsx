@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Particle {
   x: number;
@@ -12,6 +13,7 @@ interface Particle {
 
 export default function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { currentTheme } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -44,9 +46,24 @@ export default function ParticleBackground() {
       });
     }
 
+    // Helper to convert hex to rgb
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 200, g: 220, b: 240 };
+    };
+
     const animate = () => {
-      ctx.fillStyle = 'rgba(11, 13, 23, 0.1)';
+      // Use theme background color with transparency
+      const bgRgb = hexToRgb(currentTheme.colors.bg);
+      ctx.fillStyle = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, 0.1)`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Use theme primary color for particles
+      const primaryRgb = hexToRgb(currentTheme.colors.primary);
 
       particles.forEach((particle, index) => {
         particle.x += particle.vx;
@@ -58,13 +75,13 @@ export default function ParticleBackground() {
         if (particle.y < 0) particle.y = canvas.height;
         if (particle.y > canvas.height) particle.y = 0;
 
-        // Draw particle
+        // Draw particle with theme color
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(200, 220, 240, ${particle.opacity})`;
+        ctx.fillStyle = `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, ${particle.opacity})`;
         ctx.fill();
 
-        // Draw trail
+        // Draw trail with theme color
         const trailLength = 20;
         for (let i = 1; i <= trailLength; i++) {
           const trailX = particle.x - particle.vx * i * 2;
@@ -74,11 +91,11 @@ export default function ParticleBackground() {
 
           ctx.beginPath();
           ctx.arc(trailX, trailY, trailSize, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(150, 180, 220, ${trailOpacity})`;
+          ctx.fillStyle = `rgba(${primaryRgb.r * 0.8}, ${primaryRgb.g * 0.9}, ${primaryRgb.b}, ${trailOpacity})`;
           ctx.fill();
         }
 
-        // Connect nearby particles
+        // Connect nearby particles with theme color
         for (let j = index + 1; j < particles.length; j++) {
           const dx = particles[j].x - particle.x;
           const dy = particles[j].y - particle.y;
@@ -88,7 +105,7 @@ export default function ParticleBackground() {
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(100, 150, 200, ${(1 - distance / 100) * 0.1})`;
+            ctx.strokeStyle = `rgba(${primaryRgb.r * 0.6}, ${primaryRgb.g * 0.7}, ${primaryRgb.b * 0.9}, ${(1 - distance / 100) * 0.1})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
@@ -104,7 +121,7 @@ export default function ParticleBackground() {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [currentTheme]);
 
   return (
     <canvas
