@@ -33,6 +33,8 @@ export default function DashboardTab({ id }: Props) {
   const [showWorkingTodayModal, setShowWorkingTodayModal] = useState(false);
   const [selectedTeamsFilter, setSelectedTeamsFilter] = useState<string[]>([]);
   const [showRequestsDetails, setShowRequestsDetails] = useState<string | null>(null);
+  const [allRequestsData, setAllRequestsData] = useState<any[]>([]);
+  const [modifiedShiftsData, setModifiedShiftsData] = useState<any>(null);
 
   async function loadDashboard() {
     setLoading(true);
@@ -48,20 +50,14 @@ export default function DashboardTab({ id }: Props) {
 
       if (requestsRes.success && adminRes) {
         const allRequests = requestsRes.all_requests || [];
+        setAllRequestsData(allRequests); // Store in state for use in JSX
+        setModifiedShiftsData(modifiedRes); // Store in state for use in JSX
         const swapRequests = allRequests.filter((r: any) => r.type === 'swap');
         const shiftChangeRequests = allRequests.filter((r: any) => r.type === 'shift_change');
         const combinedRequests = [...swapRequests, ...shiftChangeRequests];
         
-        // Get modified shifts from API
-        let modifiedShiftsCount = 0;
-        try {
-          const modifiedRes = await fetch('/api/admin/get-modified-shifts').then(r => r.json());
-          if (modifiedRes.success) {
-            modifiedShiftsCount = modifiedRes.modified_shifts?.length || 0;
-          }
-        } catch (e) {
-          console.error('Failed to load modified shifts:', e);
-        }
+        // Get modified shifts count from already loaded data
+        const modifiedShiftsCount = modifiedRes.recent_modifications?.length || 0;
 
         const swapStats = {
           total: combinedRequests.length,
@@ -141,11 +137,38 @@ export default function DashboardTab({ id }: Props) {
         }
 
         // Merge recent activity from requests and modifications
+        // For modifications from schedule requests, link back to the request to get proper approved_by
         const recentActivity = [
-          ...allRequests.map((r: any) => ({...r, activity_type: 'request'})),
-          ...(modifiedRes.recent_modifications || []).map((m: any) => ({...m, activity_type: 'modification'}))
+          ...allRequests.map((r: any) => ({
+            ...r, 
+            activity_type: 'request',
+            timestamp: r.approved_at || r.created_at
+          })),
+          ...(modifiedRes.recent_modifications || []).map((m: any) => {
+            // If modification was from a schedule request, find the matching request
+            let linkedApprovedBy = null;
+            if (m.modified_by?.startsWith('Schedule Request')) {
+              const matchingRequest = allRequests.find((r: any) => 
+                r.employee_id === m.employee_id && 
+                r.date === m.date_header &&
+                r.status === 'approved'
+              );
+              if (matchingRequest) {
+                linkedApprovedBy = matchingRequest.approved_by;
+              }
+            }
+            
+            return {
+              ...m, 
+              activity_type: 'modification',
+              date: m.date_header,
+              old_shift: m.old_shift,
+              new_shift: m.new_shift,
+              approved_by: linkedApprovedBy // Add the linked approved_by
+            };
+          })
         ]
-          .sort((a, b) => (b.created_at || b.modified_at || '').localeCompare(a.created_at || a.modified_at || ''))
+          .sort((a, b) => (b.timestamp || b.created_at || '').localeCompare(a.timestamp || a.created_at || ''))
           .slice(0, 15);
 
         setStats({
@@ -277,11 +300,86 @@ export default function DashboardTab({ id }: Props) {
                 {showRequestsDetails === 'modified' && 'Modified Shifts by Admin'}
               </h4>
               <div style={{fontSize: '0.85rem', color: 'var(--theme-text-dim)'}}>
-                {showRequestsDetails === 'modified' ? (
-                  <p>Showing shifts modified directly by admin users</p>
-                ) : (
-                  <p>Showing {showRequestsDetails} requests. Click to close.</p>
-                )}
+                {(() => {
+                  let filteredRequests: any[] = [];
+                  const allReqs = allRequestsData || [];
+                  
+                  if (showRequestsDetails === 'total') {
+                    filteredRequests = allReqs;
+                  } else if (showRequestsDetails === 'accepted') {
+                    filteredRequests = allReqs.filter((r: any) => r.status === 'approved');
+                  } else if (showRequestsDetails === 'rejected') {
+                    filteredRequests = allReqs.filter((r: any) => r.status === 'rejected');
+                  } else if (showRequestsDetails === 'pending') {
+                    filteredRequests = allReqs.filter((r: any) => r.status === 'pending');
+                  } else if (showRequestsDetails === 'modified') {
+                    // Show modified shifts from API
+                    const modifications = modifiedShiftsData?.recent_modifications || [];
+                    return (
+                      <div>
+                        {modifications.length === 0 ? (
+                          <p>No modified shifts found</p>
+                        ) : (
+                          <table style={{width: '100%', fontSize: '0.85rem'}}>
+                            <thead>
+                              <tr style={{borderBottom: '1px solid var(--theme-border)'}}>
+                                <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Employee</th>
+                                <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Date</th>
+                                <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Change</th>
+                                <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Modified By</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {modifications.slice(0, 10).map((m: any, idx: number) => (
+                                <tr key={idx} style={{borderBottom: '1px solid var(--theme-border)'}}>
+                                  <td style={{padding: '8px', color: 'var(--theme-text)'}}>{m.employee_name}</td>
+                                  <td style={{padding: '8px', color: 'var(--theme-text-dim)'}}>{m.date_header}</td>
+                                  <td style={{padding: '8px', color: 'var(--theme-primary)'}}>{m.old_shift} → {m.new_shift}</td>
+                                  <td style={{padding: '8px', color: 'var(--theme-text-dim)', fontSize: '0.8rem'}}>{m.modified_by}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div>
+                      {filteredRequests.length === 0 ? (
+                        <p>No {showRequestsDetails} requests found</p>
+                      ) : (
+                        <table style={{width: '100%', fontSize: '0.85rem'}}>
+                          <thead>
+                            <tr style={{borderBottom: '1px solid var(--theme-border)'}}>
+                              <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Employee</th>
+                              <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Date</th>
+                              <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Type</th>
+                              <th style={{padding: '8px', textAlign: 'left', color: 'var(--theme-text-dim)'}}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredRequests.slice(0, 10).map((req: any, idx: number) => (
+                              <tr key={idx} style={{borderBottom: '1px solid var(--theme-border)'}}>
+                                <td style={{padding: '8px', color: 'var(--theme-text)'}}>
+                                  {req.type === 'swap' ? req.requester_name : req.employee_name}
+                                </td>
+                                <td style={{padding: '8px', color: 'var(--theme-text-dim)'}}>{req.date}</td>
+                                <td style={{padding: '8px', color: 'var(--theme-text-dim)'}}>{req.type === 'swap' ? 'Swap' : 'Shift Change'}</td>
+                                <td style={{padding: '8px'}}>
+                                  <span className={`activity-status ${req.status}`} style={{opacity: 1}}>
+                                    {req.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -357,23 +455,42 @@ export default function DashboardTab({ id }: Props) {
                   <div className="activity-content">
                     <div className="activity-title">
                       {activity.activity_type === 'modification' ? (
-                        `${activity.modified_by || 'Admin'} modified shift for ${activity.employee_name} on ${activity.date}: ${activity.old_shift} → ${activity.new_shift}`
+                        // For modifications, show the actual admin who made the change
+                        activity.modified_by?.startsWith('Schedule Request') 
+                          ? `Schedule Request (Approved by ${activity.approved_by || 'admin'}) modified shift for ${activity.employee_name} on ${activity.date}: ${activity.old_shift} → ${activity.new_shift}`
+                          : `${activity.modified_by || 'Admin'} modified shift for ${activity.employee_name} on ${activity.date}: ${activity.old_shift} → ${activity.new_shift}`
                       ) : activity.status === 'approved' && activity.approved_by ? (
                         activity.type === 'swap' 
                           ? `${activity.approved_by} approved Swap Request for ${activity.requester_name} ⇄ ${activity.target_employee_name}`
-                          : `${activity.approved_by} approved Shift Change for ${activity.employee_name} (${activity.current_shift} → ${activity.requested_shift})`
+                          : `${activity.approved_by} approved Shift Change for ${activity.employee_name} on ${activity.date}: ${activity.current_shift} → ${activity.requested_shift}`
                       ) : activity.status === 'rejected' && activity.approved_by ? (
                         activity.type === 'swap'
-                          ? `${activity.approved_by} rejected Swap Request for ${activity.requester_name}`
-                          : `${activity.approved_by} rejected Shift Change for ${activity.employee_name}`
+                          ? `${activity.approved_by} rejected Swap Request for ${activity.requester_name} on ${activity.date}`
+                          : `${activity.approved_by} rejected Shift Change for ${activity.employee_name} on ${activity.date}`
                       ) : (
                         activity.type === 'swap' 
-                          ? `${activity.requester_name} submitted Swap Request with ${activity.target_employee_name}`
-                          : `${activity.employee_name} submitted Shift Change Request`
+                          ? `${activity.requester_name} submitted Swap Request with ${activity.target_employee_name} on ${activity.date}`
+                          : `${activity.employee_name} submitted Shift Change Request for ${activity.date}`
                       )}
                     </div>
                     <div className="activity-meta">
-                      <span>{activity.date}</span>
+                      <span style={{color: 'var(--theme-text-dim)', fontSize: '0.75rem'}}>
+                        {(() => {
+                          const timestamp = activity.timestamp || activity.approved_at || activity.created_at;
+                          if (!timestamp) return 'No timestamp';
+                          try {
+                            const date = new Date(timestamp);
+                            return date.toLocaleString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              hour: '2-digit', 
+                              minute: '2-digit'
+                            });
+                          } catch {
+                            return timestamp;
+                          }
+                        })()}
+                      </span>
                       {activity.activity_type === 'modification' ? (
                         <span className="activity-status" style={{background: 'var(--theme-primary-glow)', color: 'var(--theme-primary)'}}>
                           modified

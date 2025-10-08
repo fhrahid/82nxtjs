@@ -65,20 +65,17 @@
 
 .stat-item.success {
   border-color: var(--theme-success, #4CAF50);
-  background: var(--theme-success, rgba(76, 175, 80, 0.1));
-  opacity: 0.2;
+  background: rgba(76, 175, 80, 0.1);
 }
 
 .stat-item.danger {
   border-color: var(--theme-danger, #F44336);
-  background: var(--theme-danger, rgba(244, 67, 54, 0.1));
-  opacity: 0.2;
+  background: rgba(244, 67, 54, 0.1);
 }
 
 .stat-item.warning {
   border-color: var(--theme-warn, #FF9800);
-  background: var(--theme-warn, rgba(255, 152, 0, 0.1));
-  opacity: 0.2;
+  background: rgba(255, 152, 0, 0.1);
 }
 
 .stat-value {
@@ -279,21 +276,18 @@
 }
 
 .activity-status.pending {
-  background: var(--theme-warn, rgba(255, 152, 0, 0.2));
+  background: rgba(255, 152, 0, 0.2);
   color: var(--theme-warn, #FF9800);
-  opacity: 0.3;
 }
 
 .activity-status.approved {
-  background: var(--theme-success, rgba(76, 175, 80, 0.2));
+  background: rgba(76, 175, 80, 0.2);
   color: var(--theme-success, #4CAF50);
-  opacity: 0.3;
 }
 
 .activity-status.rejected {
-  background: var(--theme-danger, rgba(244, 67, 54, 0.2));
+  background: rgba(244, 67, 54, 0.2);
   color: var(--theme-danger, #F44336);
-  opacity: 0.3;
 }
 
 /* Badge styles for user management */
