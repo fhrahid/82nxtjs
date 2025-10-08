@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import MonthCompactCalendar from '../Shared/MonthCompactCalendar';
+import GoogleSheetsRosterModal from '../Shared/GoogleSheetsRosterModal';
 import { SHIFT_MAP } from '@/lib/constants';
 
 interface Props { id: string; }
@@ -20,6 +21,9 @@ export default function RosterDataTab({id}:Props) {
   // Edit state
   const [editingShift, setEditingShift] = useState<{empId: string; empName: string; dateIndex: number} | null>(null);
   const [editShiftValue, setEditShiftValue] = useState('');
+  
+  // Google Sheets Roster Modal state
+  const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
 
   const [monthLabel,setMonthLabel]=useState<string>('Current Month');
 
@@ -180,6 +184,13 @@ export default function RosterDataTab({id}:Props) {
           <button className="rd-btn nav" onClick={nextMonth} disabled={loading}>Next Month →</button>
           <button className="rd-btn refresh" onClick={load} disabled={loading || saving}>
             {loading ? 'Loading…' : saving ? 'Saving…' : '🔄 Refresh'}
+          </button>
+          <button 
+            className="rd-btn google-sheets" 
+            onClick={() => setShowGoogleSheetsModal(true)} 
+            disabled={loading || !googleData}
+          >
+            📊 Google Sheets Roster
           </button>
           <button 
             className="rd-btn reset" 
@@ -379,6 +390,16 @@ export default function RosterDataTab({id}:Props) {
         </div>
       )}
 
+      {/* Google Sheets Roster Modal */}
+      {googleData && (
+        <GoogleSheetsRosterModal
+          open={showGoogleSheetsModal}
+          onClose={() => setShowGoogleSheetsModal(false)}
+          headers={googleData.headers || []}
+          teams={googleData.teams || {}}
+        />
+      )}
+
       <style jsx>{`
         .roster-data-root {
           --panel:#121d27;
@@ -427,6 +448,8 @@ export default function RosterDataTab({id}:Props) {
         .rd-btn.nav:hover { background:#236193; }
         .rd-btn.refresh { background:var(--green); border-color:#2f8b60; }
         .rd-btn.refresh:hover { background:var(--green-hover); }
+        .rd-btn.google-sheets { background:#3a6599; border-color:#5383bb; }
+        .rd-btn.google-sheets:hover { background:#4a7ab0; }
         .rd-btn.reset { background:var(--danger); border-color:#a34b4b; }
         .rd-btn.reset:hover { background:#a54848; }
         .rd-btn:disabled { opacity:.55; cursor:not-allowed; }
