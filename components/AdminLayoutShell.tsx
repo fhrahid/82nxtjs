@@ -9,8 +9,7 @@ const tabs = [
   { id:'profile', label:'👤 My Profile'},
   { id:'data-sync', label:'🔄 Data Sync'},
   { id:'google-links', label:'🔗 Google Sheets'},
-  { id:'google-data', label:'📄 Google Data'},
-  { id:'admin-data', label:'📝 Admin Data'},
+  { id:'roster-data', label:'📊 Roster Data'},
   { id:'csv-import', label:'📂 CSV Import'}
 ];
 

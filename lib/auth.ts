@@ -16,9 +16,10 @@ function sign(value:string, secret: string) {
 
 export function createSession(username: string) {
   const secret = process.env.APP_SECRET || 'dev_secret';
-  const payload = JSON.stringify({username, ts: Date.now()});
+  const ts = Date.now();
+  const payload = JSON.stringify({username, ts});
   const sig = sign(payload, secret);
-  cookies().set(ADMIN_SESSION_COOKIE, Buffer.from(JSON.stringify({username, ts: Date.now(), sig})).toString('base64'), {
+  cookies().set(ADMIN_SESSION_COOKIE, Buffer.from(JSON.stringify({username, ts, sig})).toString('base64'), {
     httpOnly: true,
     path:'/',
     maxAge: 60*60*8
