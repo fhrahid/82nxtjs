@@ -16,7 +16,10 @@ export const SHIFT_MAP: Record<string,string> = {
   SL:"Sick Leave",
   CL:"Casual Leave",
   EL:"Emergency Leave",
+  HL:"Holiday Leave",
   "":"N/A"
 };
+
+export const VALID_SHIFT_CODES = ['M2', 'M3', 'M4', 'D1', 'D2', 'DO', 'SL', 'CL', 'EL', 'HL'];
 
 export const ADMIN_SESSION_COOKIE = "admin_session_v1";
