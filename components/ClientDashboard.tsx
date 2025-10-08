@@ -80,6 +80,20 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const { currentTheme, setTheme } = useTheme();
+  const themeMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close theme menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setShowThemeMenu(false);
+      }
+    }
+    if (showThemeMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showThemeMenu]);
 
   async function loadBaseSchedule() {
     console.debug('[Load] Base schedule for', employeeId);
@@ -271,7 +285,7 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
                     ← Back to My Schedule
                   </button>
                 )}
-                <div style={{position: 'relative'}}>
+                <div style={{position: 'relative'}} ref={themeMenuRef}>
                   <button 
                     className="btn small"
                     onClick={() => setShowThemeMenu(!showThemeMenu)}
