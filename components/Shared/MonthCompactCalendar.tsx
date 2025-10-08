@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 interface Props {
   headers: string[];
@@ -7,6 +7,7 @@ interface Props {
   onSelect?: (date: string) => void;
   yearHint?: number;
   showWeekdays?: boolean;
+  showNavigation?: boolean;
 }
 
 const MONTH_MAP: Record<string, number> = {
@@ -35,15 +36,29 @@ export default function MonthCompactCalendar({
   selectedDate,
   onSelect,
   yearHint,
-  showWeekdays = true
+  showWeekdays = true,
+  showNavigation = false
 }: Props) {
+  const [monthOffset, setMonthOffset] = useState(0);
 
-  const { weeks, monthName } = useMemo(()=>{
+  const { weeks, monthName, monthIndex, year, canGoPrev, canGoNext } = useMemo(()=>{
     const det = detectMonth(headers);
     const now = new Date();
-    const year = yearHint || now.getFullYear();
-    const monthIndex = det ? det.monthIndex : now.getMonth();
-    const monthName = det ? det.name : MONTH_NAME[monthIndex];
+    let year = yearHint || now.getFullYear();
+    let monthIndex = det ? det.monthIndex : now.getMonth();
+    
+    // Apply month offset
+    monthIndex += monthOffset;
+    while (monthIndex < 0) {
+      monthIndex += 12;
+      year -= 1;
+    }
+    while (monthIndex > 11) {
+      monthIndex -= 12;
+      year += 1;
+    }
+    
+    const monthName = MONTH_NAME[monthIndex];
 
     const lastDay = new Date(year, monthIndex+1, 0).getDate();
     const days = Array.from({length:lastDay}, (_,i)=> i+1);
@@ -79,8 +94,12 @@ export default function MonthCompactCalendar({
       weeks.push(currentWeek as DayCell[]);
     }
 
-    return { weeks, monthName };
-  },[headers, yearHint]);
+    // Check if we can navigate to previous/next months based on available headers
+    const canGoPrev = monthOffset > -12; // Allow going back up to 12 months
+    const canGoNext = monthOffset < 12; // Allow going forward up to 12 months
+
+    return { weeks, monthName, monthIndex, year, canGoPrev, canGoNext };
+  },[headers, yearHint, monthOffset]);
 
   const handleSelect = (key:string) => {
     if (onSelect) onSelect(key);
@@ -89,7 +108,29 @@ export default function MonthCompactCalendar({
   return (
     <div className="mc-month-calendar large">
       <div className="mc-header-row">
-        <div className="mc-month-title">{monthName}</div>
+        {showNavigation && (
+          <button
+            type="button"
+            className="mc-nav-btn"
+            onClick={() => setMonthOffset(monthOffset - 1)}
+            disabled={!canGoPrev}
+            title="Previous Month"
+          >
+            ←
+          </button>
+        )}
+        <div className="mc-month-title">{monthName} {year}</div>
+        {showNavigation && (
+          <button
+            type="button"
+            className="mc-nav-btn"
+            onClick={() => setMonthOffset(monthOffset + 1)}
+            disabled={!canGoNext}
+            title="Next Month"
+          >
+            →
+          </button>
+        )}
       </div>
       {showWeekdays && (
         <div className="mc-weekdays">
@@ -134,13 +175,38 @@ export default function MonthCompactCalendar({
           flex-direction:column;
           gap:10px;
         }
-        .mc-header-row { display:flex; justify-content:center; }
+        .mc-header-row { 
+          display:flex; 
+          justify-content:center; 
+          align-items:center;
+          gap:12px;
+        }
         .mc-month-title {
           font-size:.9rem;
           letter-spacing:1px;
           font-weight:600;
           color:#e1e8ef;
           text-transform:uppercase;
+        }
+        .mc-nav-btn {
+          background:#1b2833;
+          border:1px solid #314252;
+          border-radius:6px;
+          color:#93a7ba;
+          padding:6px 12px;
+          font-size:1rem;
+          cursor:pointer;
+          transition:.18s;
+          font-weight:600;
+        }
+        .mc-nav-btn:hover:not(:disabled) {
+          background:#285072;
+          border-color:#3d6a8d;
+          color:#fff;
+        }
+        .mc-nav-btn:disabled {
+          opacity:.3;
+          cursor:not-allowed;
         }
         .mc-weekdays {
           display:grid;

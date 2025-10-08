@@ -17,7 +17,7 @@
           "D1",
           "DO",
           "D2",
-          "D2",
+          "M3",
           "D2",
           "D2",
           "D2",
@@ -479,6 +479,22 @@
           "DO",
           "D2",
           ""
+        ]
+      },
+      {
+        "name": "Valid Employee",
+        "id": "SLL-99999",
+        "currentTeam": "VOICE",
+        "team": "VOICE",
+        "schedule": [
+          "",
+          "M2",
+          "M3",
+          "DO",
+          "SL",
+          "CL",
+          "D1",
+          "D2"
         ]
       }
     ],
@@ -1290,42 +1306,51 @@
           "DO",
           "1"
         ]
+      },
+      {
+        "name": "Another Valid",
+        "id": "SLL-77777",
+        "currentTeam": "TL",
+        "team": "TL",
+        "schedule": [
+          "",
+          "DO",
+          "M2",
+          "M3",
+          "D1",
+          "D2",
+          "M3",
+          "DO"
+        ]
+      }
+    ],
+    "TEST_TEAM": [
+      {
+        "name": "Test Employee",
+        "id": "SLL-00001",
+        "schedule": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "currentTeam": "TEST_TEAM"
       }
     ]
   },
   "headers": [
+    "CL",
     "1Oct",
     "2Oct",
     "3Oct",
     "4Oct",
     "5Oct",
-    "6Oct",
     "7Oct",
-    "8Oct",
-    "9Oct",
-    "10Oct",
-    "11Oct",
-    "12Oct",
-    "13Oct",
-    "14Oct",
-    "15Oct",
-    "16Oct",
-    "17Oct",
-    "18Oct",
-    "19Oct",
-    "20Oct",
-    "21Oct",
-    "22Oct",
-    "23Oct",
-    "24Oct",
-    "25Oct",
-    "26Oct",
-    "27Oct",
-    "28Oct",
-    "29Oct",
-    "30Oct",
-    "31Oct",
-    "CL"
+    "8Oct"
   ],
   "allEmployees": [
     {
@@ -1806,6 +1831,22 @@
         "DO",
         "D2",
         ""
+      ]
+    },
+    {
+      "name": "Valid Employee",
+      "id": "SLL-99999",
+      "currentTeam": "VOICE",
+      "team": "VOICE",
+      "schedule": [
+        "",
+        "M2",
+        "M3",
+        "DO",
+        "SL",
+        "CL",
+        "D1",
+        "D2"
       ]
     },
     {
@@ -2606,6 +2647,22 @@
         "M3",
         "DO",
         "1"
+      ]
+    },
+    {
+      "name": "Another Valid",
+      "id": "SLL-77777",
+      "currentTeam": "TL",
+      "team": "TL",
+      "schedule": [
+        "",
+        "DO",
+        "M2",
+        "M3",
+        "D1",
+        "D2",
+        "M3",
+        "DO"
       ]
     }
   ]
