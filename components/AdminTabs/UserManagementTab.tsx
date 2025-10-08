@@ -28,7 +28,7 @@ export default function UserManagementTab({ id }: Props) {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/get-users');
+      const res = await fetch('/api/admin/users/list');
       if (res.ok) {
         const j = await res.json();
         if (j.success && Array.isArray(j.users)) {
@@ -46,26 +46,42 @@ export default function UserManagementTab({ id }: Props) {
   async function saveUser() {
     if (!username || !fullName)
       return;
-    const body = editing
-      ? { action: 'edit', username, full_name: fullName, role, original: editing.username }
-      : { action: 'add', username, full_name: fullName, role };
-    const res = await fetch('/api/admin/save-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(r => r.json()).catch(()=>null);
+    
+    let res;
+    if (editing) {
+      // Update existing user
+      const body = { username: editing.username, updates: { full_name: fullName, role } };
+      res = await fetch('/api/admin/users/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(r => r.json()).catch(()=>null);
+    } else {
+      // Add new user - generate a default password
+      const password = 'change_me_123'; // User should change this immediately
+      const body = { username, password, full_name: fullName, role };
+      res = await fetch('/api/admin/users/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(r => r.json()).catch(()=>null);
+    }
+    
     if (res?.success) {
       setUsername('');
       setFullName('');
       setRole('admin');
       setEditing(null);
       load();
+      if (!editing) {
+        alert('User added successfully! Default password: change_me_123 (user should change this immediately)');
+      }
     } else alert(res?.error || 'Failed to save user');
   }
 
   async function deleteUser(u: string) {
     if (!confirm(`Delete user ${u}?`)) return;
-    const res = await fetch('/api/admin/delete-user', {
+    const res = await fetch('/api/admin/users/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: u })
