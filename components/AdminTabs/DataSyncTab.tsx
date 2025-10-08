@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 interface Props { id: string; }
 export default function DataSyncTab({id}:Props) {
   const [googleStatus,setGoogleStatus]=useState('Not loaded');
@@ -10,7 +10,7 @@ export default function DataSyncTab({id}:Props) {
   const [autoSyncEnabled,setAutoSyncEnabled]=useState(false);
   const [lastSyncTime,setLastSyncTime]=useState<string>('');
 
-  async function load() {
+  const load = useCallback(async function() {
     setLoading(true);
     try {
       const disp = await fetch('/api/admin/get-display-data').then(r=>r.json());
@@ -30,7 +30,7 @@ export default function DataSyncTab({id}:Props) {
       console.error(e);
     }
     setLoading(false);
-  }
+  }, []);
 
   async function calcModified(g:any,a:any) {
     if (!g || !a) return 0;
@@ -49,20 +49,20 @@ export default function DataSyncTab({id}:Props) {
     return count;
   }
 
-  async function syncSheets() {
+  const syncSheets = useCallback(async function() {
     setSyncing(true);
     const res = await fetch('/api/admin/sync-google-sheets',{method:'POST'}).then(r=>r.json());
     setSyncing(false);
     setLastSyncTime(new Date().toLocaleTimeString());
     alert(res.success? res.message : res.error);
     load();
-  }
+  }, [load]);
 
   function toggleAutoSync() {
     setAutoSyncEnabled(!autoSyncEnabled);
   }
 
-  useEffect(()=>{ load(); },[]);
+  useEffect(()=>{ load(); },[load]);
 
   // Auto-sync every 5 minutes if enabled
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function DataSyncTab({id}:Props) {
     }, 5 * 60 * 1000); // 5 minutes
     
     return () => clearInterval(interval);
-  }, [autoSyncEnabled]);
+  }, [autoSyncEnabled, syncSheets]);
 
   return (
     <div id={id} className="tab-pane">
