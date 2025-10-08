@@ -128,6 +128,7 @@ export default function ShiftView({ open, onClose, roster, headers }: Props) {
               selectedDate={selectedDate}
               onSelect={(d)=> setSelectedDate(d)}
               showWeekdays
+              showNavigation
             />
           </div>
           <div className="sv-content-col-wide">

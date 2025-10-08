@@ -17,8 +17,44 @@ interface Props {
   teams: Record<string, Employee[]>;
 }
 
+const MONTH_MAP: Record<string, number> = {
+  jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11
+};
+const MONTH_NAME: Record<number,string> = {
+  0:"Jan",1:"Feb",2:"Mar",3:"Apr",4:"May",5:"Jun",6:"Jul",7:"Aug",8:"Sep",9:"Oct",10:"Nov",11:"Dec"
+};
+
+function detectMonth(headers: string[]): {monthIndex:number, name:string}|null {
+  for (const h of headers) {
+    const m = h.match(/[A-Za-z]+$/);
+    if (m) {
+      const key = m[0].slice(0,3).toLowerCase();
+      if (MONTH_MAP[key] !== undefined) {
+        const idx = MONTH_MAP[key];
+        return {monthIndex: idx, name: MONTH_NAME[idx]};
+      }
+    }
+  }
+  return null;
+}
+
+function detectAvailableMonths(headers: string[]): Set<string> {
+  const months = new Set<string>();
+  for (const h of headers) {
+    const m = h.match(/[A-Za-z]+$/);
+    if (m) {
+      const key = m[0].slice(0,3).toLowerCase();
+      if (MONTH_MAP[key] !== undefined) {
+        months.add(key);
+      }
+    }
+  }
+  return months;
+}
+
 export default function GoogleSheetsRosterModal({ open, onClose, headers, teams }: Props) {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [monthOffset, setMonthOffset] = useState(0);
 
   const teamNames = useMemo(() => Object.keys(teams || {}), [teams]);
 
@@ -35,6 +71,47 @@ export default function GoogleSheetsRosterModal({ open, onClose, headers, teams 
   const clearAllTeams = () => {
     setSelectedTeams([]);
   };
+
+  // Calculate the current month being displayed
+  const { displayHeaders, displayMonthName, canGoPrev, canGoNext } = useMemo(() => {
+    const det = detectMonth(headers);
+    const availableMonths = detectAvailableMonths(headers);
+    const now = new Date();
+    let monthIndex = det ? det.monthIndex : now.getMonth();
+    
+    // Apply month offset
+    monthIndex += monthOffset;
+    while (monthIndex < 0) {
+      monthIndex += 12;
+    }
+    while (monthIndex > 11) {
+      monthIndex -= 12;
+    }
+    
+    const monthName = MONTH_NAME[monthIndex];
+    const currentMonthKey = monthName.toLowerCase().slice(0, 3);
+    
+    // Filter headers to only show the current month
+    const displayHeaders = headers.filter(h => {
+      const m = h.match(/[A-Za-z]+$/);
+      if (m) {
+        const key = m[0].slice(0,3).toLowerCase();
+        return key === currentMonthKey;
+      }
+      return false;
+    });
+    
+    // Check if previous/next months have data
+    const prevMonthIndex = monthIndex === 0 ? 11 : monthIndex - 1;
+    const nextMonthIndex = monthIndex === 11 ? 0 : monthIndex + 1;
+    const prevMonthKey = MONTH_NAME[prevMonthIndex].toLowerCase().slice(0, 3);
+    const nextMonthKey = MONTH_NAME[nextMonthIndex].toLowerCase().slice(0, 3);
+    
+    const canGoPrev = availableMonths.has(prevMonthKey);
+    const canGoNext = availableMonths.has(nextMonthKey);
+    
+    return { displayHeaders, displayMonthName: monthName, canGoPrev, canGoNext };
+  }, [headers, monthOffset]);
 
   const filteredTeams = useMemo(() => {
     if (!teams) return {};
@@ -55,9 +132,35 @@ export default function GoogleSheetsRosterModal({ open, onClose, headers, teams 
   const TEAM_COL_W = 120;
   const DATE_COL_W = 120;
 
+  // Get the header indices for the current month
+  const displayHeaderIndices = useMemo(() => {
+    return displayHeaders.map(h => headers.indexOf(h));
+  }, [displayHeaders, headers]);
+
   return (
     <Modal open={open} onClose={onClose} title="Google Sheets Roster" width="90vw">
       <div className="google-sheets-roster-modal">
+        {/* Month Navigation */}
+        <div className="month-navigation">
+          <button
+            className="month-nav-btn"
+            onClick={() => setMonthOffset(monthOffset - 1)}
+            disabled={!canGoPrev}
+            title="Previous Month"
+          >
+            ←
+          </button>
+          <div className="month-display">{displayMonthName}</div>
+          <button
+            className="month-nav-btn"
+            onClick={() => setMonthOffset(monthOffset + 1)}
+            disabled={!canGoNext}
+            title="Next Month"
+          >
+            →
+          </button>
+        </div>
+
         {/* Team Filter Section */}
         <div className="filter-section">
           <div className="filter-header">
@@ -93,7 +196,7 @@ export default function GoogleSheetsRosterModal({ open, onClose, headers, teams 
                   <th className="sticky-col name-col" style={{minWidth: NAME_COL_W}}>Employee</th>
                   <th className="sticky-col id-col" style={{left: NAME_COL_W, minWidth: ID_COL_W}}>ID</th>
                   <th className="sticky-col team-col" style={{left: NAME_COL_W + ID_COL_W, minWidth: TEAM_COL_W}}>Team</th>
-                  {headers.map((header, i) => (
+                  {displayHeaders.map((header, i) => (
                     <th key={i} className="date-col" style={{minWidth: DATE_COL_W}}>{header}</th>
                   ))}
                 </tr>
@@ -105,8 +208,8 @@ export default function GoogleSheetsRosterModal({ open, onClose, headers, teams 
                       <td className="sticky-col name-col" style={{minWidth: NAME_COL_W}}>{emp.name}</td>
                       <td className="sticky-col id-col" style={{left: NAME_COL_W, minWidth: ID_COL_W}}>{emp.id}</td>
                       <td className="sticky-col team-col" style={{left: NAME_COL_W + ID_COL_W, minWidth: TEAM_COL_W}}>{teamName}</td>
-                      {headers.map((_, idx) => (
-                        <td key={idx} className="shift-cell" style={{minWidth: DATE_COL_W}}>
+                      {displayHeaderIndices.map((idx, i) => (
+                        <td key={i} className="shift-cell" style={{minWidth: DATE_COL_W}}>
                           {emp.schedule[idx] || ''}
                         </td>
                       ))}
@@ -124,6 +227,51 @@ export default function GoogleSheetsRosterModal({ open, onClose, headers, teams 
             flex-direction: column;
             gap: 20px;
             max-height: 70vh;
+          }
+
+          .month-navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 12px 16px;
+            background: #0f1822;
+            border: 1px solid #1f2e3b;
+            border-radius: 10px;
+          }
+
+          .month-nav-btn {
+            background: #1b2833;
+            border: 1px solid #314252;
+            border-radius: 6px;
+            color: #93a7ba;
+            padding: 8px 16px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.18s;
+            font-weight: 600;
+            min-width: 50px;
+          }
+
+          .month-nav-btn:hover:not(:disabled) {
+            background: #285072;
+            border-color: #3d6a8d;
+            color: #fff;
+          }
+
+          .month-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+          }
+
+          .month-display {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e1e8ef;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            min-width: 120px;
+            text-align: center;
           }
 
           .filter-section {
