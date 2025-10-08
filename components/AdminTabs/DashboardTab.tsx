@@ -22,6 +22,7 @@ interface DashboardStats {
     };
   };
   recent_activity: any[];
+  total_employees: number;
 }
 
 export default function DashboardTab({ id }: Props) {
@@ -40,14 +41,16 @@ export default function DashboardTab({ id }: Props) {
       if (requestsRes.success && adminRes) {
         const allRequests = requestsRes.all_requests || [];
         const swapRequests = allRequests.filter((r: any) => r.type === 'swap');
+        const shiftChangeRequests = allRequests.filter((r: any) => r.type === 'shift_change');
+        const combinedRequests = [...swapRequests, ...shiftChangeRequests];
         
         const swapStats = {
-          total: swapRequests.length,
-          accepted: swapRequests.filter((r: any) => r.status === 'approved').length,
-          rejected: swapRequests.filter((r: any) => r.status === 'rejected').length,
-          pending: swapRequests.filter((r: any) => r.status === 'pending').length,
-          acceptance_rate: swapRequests.length > 0 
-            ? Math.round((swapRequests.filter((r: any) => r.status === 'approved').length / swapRequests.length) * 100)
+          total: combinedRequests.length,
+          accepted: combinedRequests.filter((r: any) => r.status === 'approved').length,
+          rejected: combinedRequests.filter((r: any) => r.status === 'rejected').length,
+          pending: combinedRequests.filter((r: any) => r.status === 'pending').length,
+          acceptance_rate: combinedRequests.length > 0 
+            ? Math.round((combinedRequests.filter((r: any) => r.status === 'approved').length / combinedRequests.length) * 100)
             : 0
         };
 
@@ -89,10 +92,14 @@ export default function DashboardTab({ id }: Props) {
           });
         }
 
+        // Calculate total employees
+        const totalEmployees = Object.values(adminRes.teams).reduce((acc: number, team: any) => acc + team.length, 0);
+
         setStats({
           swap_requests: swapStats,
           team_stats: teamStats,
-          recent_activity: allRequests.slice(0, 10)
+          recent_activity: allRequests.slice(0, 10),
+          total_employees: totalEmployees
         });
       }
     } catch (error) {
@@ -127,9 +134,18 @@ export default function DashboardTab({ id }: Props) {
       <p>Overview of team health, swap requests, and activity.</p>
 
       <div className="dashboard-grid">
-        {/* Swap Requests Overview */}
+        {/* Total Employees Stat Card */}
+        <div className="dashboard-card compact">
+          <h3>👥 Total Employees This Month</h3>
+          <div className="big-stat">
+            <div className="big-stat-value">{stats.total_employees}</div>
+            <div className="big-stat-label">Active Employees</div>
+          </div>
+        </div>
+
+        {/* Shift Change / Swap Requests Overview */}
         <div className="dashboard-card">
-          <h3>🔁 Swap Requests Overview</h3>
+          <h3>🔁 Shift Change / Swap Requests Overview</h3>
           <div className="stats-grid">
             <div className="stat-item">
               <div className="stat-value">{stats.swap_requests.total}</div>
@@ -213,13 +229,23 @@ export default function DashboardTab({ id }: Props) {
               stats.recent_activity.map((activity: any, idx: number) => (
                 <div key={idx} className="activity-item">
                   <div className="activity-icon">
-                    {activity.type === 'swap' ? '🔁' : '✏️'}
+                    {activity.status === 'approved' ? '✅' : activity.status === 'rejected' ? '❌' : '⏳'}
                   </div>
                   <div className="activity-content">
                     <div className="activity-title">
-                      {activity.type === 'swap' 
-                        ? `${activity.requester_name} requested swap with ${activity.target_employee_name}`
-                        : `${activity.employee_name} requested shift change`}
+                      {activity.status === 'approved' && activity.approved_by ? (
+                        activity.type === 'swap' 
+                          ? `${activity.approved_by} approved Swap Request for ${activity.requester_name} ⇄ ${activity.target_employee_name}`
+                          : `${activity.approved_by} approved Shift Change for ${activity.employee_name} (${activity.current_shift} → ${activity.requested_shift})`
+                      ) : activity.status === 'rejected' && activity.approved_by ? (
+                        activity.type === 'swap'
+                          ? `${activity.approved_by} rejected Swap Request for ${activity.requester_name}`
+                          : `${activity.approved_by} rejected Shift Change for ${activity.employee_name}`
+                      ) : (
+                        activity.type === 'swap' 
+                          ? `${activity.requester_name} submitted Swap Request with ${activity.target_employee_name}`
+                          : `${activity.employee_name} submitted Shift Change Request`
+                      )}
                     </div>
                     <div className="activity-meta">
                       <span>{activity.date}</span>

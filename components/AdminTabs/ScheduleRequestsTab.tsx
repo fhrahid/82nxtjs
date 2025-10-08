@@ -67,9 +67,17 @@ export default function ScheduleRequestsTab({id}:Props) {
 
   function renderRow(r:Request, pending:boolean) {
     const isShift = r.type==='shift_change';
+    const employeeName = isShift ? r.employee_name : r.requester_name;
+    const employeeId = isShift ? r.employee_id : r.requester_id;
+    
     return (
       <tr key={r.id} className={pending?'pending-row':''}>
-        <td>{r.id}</td>
+        <td>
+          <div style={{fontSize: '0.85rem'}}>
+            <div><strong>{employeeName || 'N/A'}</strong></div>
+            <div style={{color: '#7E90A8', fontSize: '0.75rem'}}>{employeeId || 'N/A'}</div>
+          </div>
+        </td>
         <td>{r.type==='swap'? 'Swap':'Change'}</td>
         <td>{r.team}</td>
         <td>{r.date}</td>
@@ -85,15 +93,14 @@ export default function ScheduleRequestsTab({id}:Props) {
               <div>{r.approved_by}</div>
               <div style={{color: '#7E90A8'}}>{r.approved_at ? new Date(r.approved_at).toLocaleString() : ''}</div>
             </div>
-          ) : '-'}
-        </td>
-        <td>
-          {pending &&
-            <>
-              <button className="btn success tiny" onClick={()=>act(r.id,'approved')}>Approve</button>
-              <button className="btn danger tiny" onClick={()=>act(r.id,'rejected')}>Reject</button>
-            </>
-          }
+          ) : (
+            pending ? (
+              <>
+                <button className="btn success tiny" onClick={()=>act(r.id,'approved')}>Approve</button>
+                <button className="btn danger tiny" onClick={()=>act(r.id,'rejected')}>Reject</button>
+              </>
+            ) : '-'
+          )}
         </td>
       </tr>
     );
@@ -153,11 +160,11 @@ export default function ScheduleRequestsTab({id}:Props) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th><th>Type</th><th>Team</th><th>Date</th><th>Shift(s)</th><th>Status</th><th>Reason</th><th>Created</th><th>Approved By</th><th>Actions</th>
+              <th>Employee</th><th>Type</th><th>Team</th><th>Date</th><th>Shift(s)</th><th>Status</th><th>Reason</th><th>Created</th><th>Approved By</th>
             </tr>
           </thead>
           <tbody>
-            {getFilteredRequests().length===0 && <tr><td colSpan={10}>No requests found</td></tr>}
+            {getFilteredRequests().length===0 && <tr><td colSpan={9}>No requests found</td></tr>}
             {getFilteredRequests().map(r=>renderRow(r, r.status==='pending'))}
           </tbody>
         </table>

@@ -7,6 +7,8 @@ import ParticleBackground from './Shared/ParticleBackground';
 import ShiftView from './ShiftView';
 import MonthCompactCalendar from './Shared/MonthCompactCalendar'; // NEW: plain calendar (replacing colorful mini calendar)
 import { SHIFT_MAP } from '@/lib/constants';
+import { useTheme, themes } from '@/contexts/ThemeContext';
+import { Palette } from 'lucide-react';
 
 interface ScheduleData {
   employee: { name:string; id:string; team:string };
@@ -76,6 +78,8 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
   const [rerenderKey,setRerenderKey]=useState(0);
   const lastActionRef = useRef<string>('');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const { currentTheme, setTheme } = useTheme();
 
   async function loadBaseSchedule() {
     console.debug('[Load] Base schedule for', employeeId);
@@ -267,6 +271,60 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
                     ← Back to My Schedule
                   </button>
                 )}
+                <div style={{position: 'relative'}}>
+                  <button 
+                    className="btn small"
+                    onClick={() => setShowThemeMenu(!showThemeMenu)}
+                    style={{display: 'flex', alignItems: 'center', gap: 6}}
+                  >
+                    <Palette size={16} /> Theme
+                  </button>
+                  {showThemeMenu && (
+                    <div 
+                      className="theme-menu"
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        right: 0,
+                        marginTop: 8,
+                        background: 'var(--theme-panel, #1A1F2E)',
+                        border: '1px solid var(--theme-border, #2A3140)',
+                        borderRadius: 8,
+                        padding: 10,
+                        minWidth: 200,
+                        maxHeight: 400,
+                        overflowY: 'auto',
+                        zIndex: 1000,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                      }}
+                    >
+                      {themes.map(theme => (
+                        <button
+                          key={theme.id}
+                          onClick={() => {
+                            setTheme(theme.id);
+                            setShowThemeMenu(false);
+                          }}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            padding: '8px 12px',
+                            textAlign: 'left',
+                            background: currentTheme.id === theme.id ? 'var(--theme-primary, #4A7BD0)' : 'transparent',
+                            color: currentTheme.id === theme.id ? '#fff' : 'var(--theme-text, #E5EAF0)',
+                            border: 'none',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            marginBottom: 4,
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          {theme.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
