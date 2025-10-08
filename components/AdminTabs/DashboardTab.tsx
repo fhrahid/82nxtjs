@@ -192,13 +192,6 @@ export default function DashboardTab({ id }: Props) {
 
   useEffect(() => { 
     loadDashboard(); 
-    
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(() => {
-      loadDashboard();
-    }, 5000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

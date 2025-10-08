@@ -586,3 +586,135 @@ header h1 { margin:0 0 8px; font-size:1.5rem; color:var(--theme-text, #E5EAF0); 
   50% { opacity:1; }
   100% { opacity:.45; }
 }
+
+/* Mobile Responsive Styles for Client Dashboard */
+@media (max-width: 768px) {
+  .client-dash {
+    padding: 12px;
+  }
+
+  .dash-header {
+    padding: 14px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dash-title-section {
+    width: 100%;
+  }
+
+  .dash-user-info {
+    width: 100%;
+  }
+
+  .dash-title {
+    font-size: 1.3rem;
+  }
+
+  .dash-nav {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dash-nav-link {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .sync-controls {
+    padding: 12px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .shifts-panel {
+    padding: 16px;
+  }
+
+  .employee-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .shift-row {
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .shift-label {
+    width: 100%;
+  }
+
+  .shift-code {
+    width: 100%;
+  }
+
+  .upcoming-section {
+    padding: 16px;
+  }
+
+  .upcoming-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .day-card {
+    padding: 12px;
+  }
+
+  .requests-section {
+    padding: 16px;
+  }
+
+  .request-card {
+    padding: 14px;
+  }
+
+  .request-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .request-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .client-dash {
+    padding: 8px;
+  }
+
+  .dash-header {
+    padding: 12px;
+  }
+
+  .dash-title {
+    font-size: 1.1rem;
+  }
+
+  .dash-nav-link {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+
+  .shifts-panel {
+    padding: 12px;
+  }
+
+  .shift-row {
+    padding: 10px;
+  }
+
+  .upcoming-section,
+  .requests-section {
+    padding: 12px;
+  }
+
+  .day-card,
+  .request-card {
+    padding: 10px;
+  }
+}
+}

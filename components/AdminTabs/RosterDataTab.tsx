@@ -37,13 +37,6 @@ export default function RosterDataTab({id}:Props) {
   }
   useEffect(() => { 
     load(); 
-    
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(() => {
-      load();
-    }, 5000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   async function updateShift(employeeId:string,dateIndex:number,newShift:string) {
@@ -706,6 +699,63 @@ export default function RosterDataTab({id}:Props) {
         @media (max-width: 1000px) {
           .sv-body-inline { flex-direction:column; }
           .sv-calendar-col { flex:0 0 auto; }
+        }
+
+        @media (max-width: 768px) {
+          .rd-bar { 
+            flex-direction: column;
+            gap: 12px;
+          }
+          .rd-bar-actions {
+            width: 100%;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .rd-btn {
+            width: 100%;
+            text-align: center;
+          }
+          .sv-employee-grid {
+            grid-template-columns: 1fr;
+          }
+          .sv-chip-row {
+            gap: 6px;
+          }
+          .sv-chip {
+            padding: 6px 12px;
+            font-size: 0.7rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .roster-data-root {
+            padding: 0;
+          }
+          .rd-title {
+            font-size: 1.1rem;
+          }
+          .rd-sub {
+            font-size: 0.68rem;
+          }
+          .rd-shift-view-container {
+            padding: 12px;
+          }
+          .sv-section-label {
+            font-size: 0.75rem;
+          }
+          .sv-filter-title {
+            font-size: 0.68rem;
+          }
+          .sv-subtitle {
+            font-size: 0.9rem;
+          }
+          .sv-emp-card {
+            padding: 10px 12px;
+          }
+          .edit-modal {
+            width: 95% !important;
+            max-width: 95% !important;
+          }
         }
       `}</style>
     </div>
