@@ -216,24 +216,26 @@ export default function TeamManagementTab({id}:Props) {
           {!selectedTeam && <div className="info-box">Select a team to manage employees.</div>}
           {selectedTeam &&
             <>
-              <table className="data-table tiny">
-                <thead>
-                  <tr><th>Name</th><th>ID</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {data.teams[selectedTeam]?.length===0 && <tr><td colSpan={3}>No employees</td></tr>}
-                  {data.teams[selectedTeam]?.map(e=>(
-                    <tr key={e.id}>
-                      <td>{e.name}</td>
-                      <td>{e.id}</td>
-                      <td>
-                        <button className="icon-btn" onClick={()=>startEmpEdit(e,selectedTeam)}>✏️</button>
-                        <button className="icon-btn danger" onClick={()=>deleteEmployee(e.id)}>🗑️</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="table-wrapper">
+                <table className="data-table tiny">
+                  <thead>
+                    <tr><th>Name</th><th>ID</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {data.teams[selectedTeam]?.length===0 && <tr><td colSpan={3}>No employees</td></tr>}
+                    {data.teams[selectedTeam]?.map(e=>(
+                      <tr key={e.id}>
+                        <td>{e.name}</td>
+                        <td>{e.id}</td>
+                        <td>
+                          <button className="icon-btn" onClick={()=>startEmpEdit(e,selectedTeam)}>✏️</button>
+                          <button className="icon-btn danger" onClick={()=>deleteEmployee(e.id)}>🗑️</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <div className="employee-form">
                 <h4>Add Employee</h4>
                 <div className="form-grid two">
