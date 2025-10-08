@@ -231,7 +231,9 @@ function AdminLayoutContent({children, adminUser, userRole}:{children:React.Reac
 export default function AdminLayoutShell({children, adminUser, userRole}:{children:React.ReactNode, adminUser:string, userRole?:string}) {
   return (
     <ThemeProvider>
-      <AdminLayoutContent children={children} adminUser={adminUser} userRole={userRole} />
+      <AdminLayoutContent adminUser={adminUser} userRole={userRole}>
+        {children}
+      </AdminLayoutContent>
     </ThemeProvider>
   );
 }

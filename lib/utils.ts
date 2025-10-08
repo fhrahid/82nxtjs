@@ -36,6 +36,18 @@ export function writeJSON(file: string, data: any) {
   }
 }
 
+/**
+ * Delete a file if it exists.
+ * Gracefully handles non-existent files.
+ */
+export function deleteFile(file: string) {
+  try {
+    fs.unlinkSync(file);
+  } catch {
+    // File doesn't exist or can't be deleted, ignore
+  }
+}
+
 export function deepCopy<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
