@@ -249,13 +249,19 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
 
   const getAllEmployees = () => {
     if (!roster?.teams) return [];
-    const employees: any[] = [];
+    const employeeMap = new Map<string, any>();
+    
+    // Collect all employees, keeping track of the most recent team
+    // (later entries in the iteration will overwrite earlier ones)
     Object.entries(roster.teams).forEach(([teamName, teamEmployees]: [string, any]) => {
       (teamEmployees as any[]).forEach((emp: any) => {
-        employees.push({ id: emp.id, name: emp.name, team: teamName });
+        // Use currentTeam if available, otherwise use the team from iteration
+        const team = emp.currentTeam || teamName;
+        employeeMap.set(emp.id, { id: emp.id, name: emp.name, team });
       });
     });
-    return employees;
+    
+    return Array.from(employeeMap.values());
   };
 
   return (
@@ -455,6 +461,7 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
                           selectedDate={selectedDate}
                           onSelect={(d)=>handleCalendarSelect(d)}
                           showWeekdays
+                          showNavigation
                         />
                       </div>
                     )}

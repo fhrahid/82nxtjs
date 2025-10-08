@@ -94,8 +94,24 @@ export function mergeCsvIntoGoogle(existing: RosterData, rawRows: string[][]) {
   Object.entries(importedTeams).forEach(([team, emps])=>{
     if (!existing.teams[team]) existing.teams[team] = [];
     emps.forEach(imp=>{
+      // First, check if employee exists in ANY team and remove them if found in a different team
+      let foundInOtherTeam = false;
+      Object.entries(existing.teams).forEach(([otherTeam, otherEmps])=>{
+        if (otherTeam !== team) {
+          const idx = otherEmps.findIndex(e=>e.id===imp.id);
+          if (idx > -1) {
+            // Employee found in different team, remove them
+            existing.teams[otherTeam].splice(idx, 1);
+            foundInOtherTeam = true;
+          }
+        }
+      });
+      
       const existingEmp = existing.teams[team].find(e=>e.id===imp.id);
       if (existingEmp) {
+        // Update existing employee in current team
+        existingEmp.currentTeam = team;
+        existingEmp.team = team;
         while (existingEmp.schedule.length < newHeaders.length) existingEmp.schedule.push('');
         normalized.forEach((hdr,i)=>{
           const idx = newHeaders.indexOf(hdr);
@@ -104,6 +120,7 @@ export function mergeCsvIntoGoogle(existing: RosterData, rawRows: string[][]) {
           }
         });
       } else {
+        // Add new employee to current team
         const newEmp: Employee = {
           name: imp.name,
           id: imp.id,
