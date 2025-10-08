@@ -49,13 +49,35 @@ export function setGoogle(data: RosterData) {
     adminData = deepCopy(data);
     saveAdmin();
   } else {
-    // Add newly discovered employees
+    // Sync employees from google data to admin data, handling team changes
     Object.entries(data.teams).forEach(([teamName, emps])=>{
       if (!adminData.teams[teamName]) adminData.teams[teamName] = [];
       emps.forEach(gEmp=>{
+        // Check if employee exists in ANY team in adminData
+        let foundInOtherTeam = false;
+        Object.entries(adminData.teams).forEach(([otherTeam, otherEmps])=>{
+          if (otherTeam !== teamName) {
+            const idx = otherEmps.findIndex(a=>a.id===gEmp.id);
+            if (idx > -1) {
+              // Employee found in different team, remove them
+              adminData.teams[otherTeam].splice(idx, 1);
+              foundInOtherTeam = true;
+            }
+          }
+        });
+        
+        // Check if employee exists in current team
         const exists = adminData.teams[teamName].some(a=>a.id===gEmp.id);
         if (!exists) {
+          // Add employee to new team
           adminData.teams[teamName].push(deepCopy(gEmp));
+        } else if (foundInOtherTeam) {
+          // Update team assignment for existing employee
+          const emp = adminData.teams[teamName].find(a=>a.id===gEmp.id);
+          if (emp) {
+            emp.currentTeam = teamName;
+            emp.team = teamName;
+          }
         }
       });
     });

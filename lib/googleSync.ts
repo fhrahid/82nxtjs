@@ -58,9 +58,22 @@ function merge(base: RosterData, incoming: RosterData) {
   Object.entries(incoming.teams).forEach(([team, emps])=>{
     if (!base.teams[team]) base.teams[team] = [];
     emps.forEach(emp=>{
+      // First, check if employee exists in ANY team and remove them if found in a different team
+      Object.entries(base.teams).forEach(([otherTeam, otherEmps])=>{
+        if (otherTeam !== team) {
+          const idx = otherEmps.findIndex(e=>e.id===emp.id);
+          if (idx > -1) {
+            // Employee found in different team, remove them
+            base.teams[otherTeam].splice(idx, 1);
+          }
+        }
+      });
+      
       const existing = base.teams[team].find(e=>e.id===emp.id);
       if (existing) {
-        // fill
+        // Update existing employee in current team
+        existing.currentTeam = team;
+        existing.team = team;
         incoming.headers.forEach((hdr,i)=>{
           const idx = base.headers.indexOf(hdr);
           if (idx>-1) {
@@ -70,6 +83,8 @@ function merge(base: RosterData, incoming: RosterData) {
       } else {
         const newEmp = {
           ...emp,
+          currentTeam: team,
+          team: team,
           schedule: Array(base.headers.length).fill('')
         };
         incoming.headers.forEach((hdr,i)=>{
