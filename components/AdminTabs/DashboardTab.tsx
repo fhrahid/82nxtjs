@@ -113,7 +113,9 @@ export default function DashboardTab({ id }: Props) {
 
         // Calculate employees working today
         const today = new Date();
-        const todayDateStr = today.toISOString().split('T')[0];
+        // Convert to format like "1Oct", "2Oct", etc. to match headers
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const todayDateStr = `${today.getDate()}${monthNames[today.getMonth()]}`;
         const workingToday: any[] = [];
         
         if (adminRes.headers && adminRes.teams) {
