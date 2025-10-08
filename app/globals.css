@@ -821,4 +821,23 @@ input:focus, select:focus, textarea:focus {
   h2 { font-size: 1.15rem; }
   h3 { font-size: 1rem; }
   h4 { font-size: 0.95rem; }
+  
+  /* Team Management mobile styles */
+  .teams-panel, .employees-panel {
+    padding: 12px;
+  }
+  
+  .data-table {
+    font-size: 0.7rem;
+  }
+  
+  .data-table th, .data-table td {
+    padding: 8px 6px;
+  }
+  
+  .icon-btn {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+  }
 }

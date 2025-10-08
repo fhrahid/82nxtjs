@@ -10,13 +10,20 @@ export async function POST() {
   const google = getGoogle();
   if (!google.headers.length) return NextResponse.json({success:false, error:'No Google data loaded'});
   
-  // Delete the files completely
-  deleteFile(MODIFIED_SHIFTS_FILE);
-  deleteFile(SCHEDULE_REQUESTS_FILE);
-  deleteFile(ADMIN_DATA_FILE);
+  // Clear modified shifts and schedule requests first
+  writeJSON(MODIFIED_SHIFTS_FILE, {modifications:[], monthly_stats:{}});
+  writeJSON(SCHEDULE_REQUESTS_FILE, {
+    shift_change_requests: [],
+    swap_requests: [],
+    approved_count: 0,
+    pending_count: 0
+  });
   
-  // Reload all data - this will sync admin_data from google_data
+  // Reset admin data to Google data (this ensures in-memory data is updated)
+  setAdmin(google);
+  
+  // Reload all data to ensure everything is in sync
   loadAll();
   
-  return NextResponse.json({success:true, message:'Admin data, schedule requests, and modified shifts have been deleted and reset to Google base roster.'});
+  return NextResponse.json({success:true, message:'Admin data, schedule requests, and modified shifts have been reset to Google base roster.'});
 }
