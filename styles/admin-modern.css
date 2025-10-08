@@ -562,6 +562,41 @@
 
   .admin-main-content {
     margin-left: 0;
+    padding: 0;
+  }
+
+  .admin-content-header {
+    padding: 15px;
+  }
+
+  .admin-content-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .admin-content-body {
+    padding: 15px;
+  }
+
+  .section-card {
+    padding: 15px;
+  }
+
+  /* Make status grid single column */
+  .status-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tab pane adjustments */
+  .tab-pane {
+    padding: 12px;
+  }
+
+  .tab-pane h2 {
+    font-size: 1.1rem;
+  }
+
+  .tab-pane p {
+    font-size: 0.85rem;
   }
 }
 

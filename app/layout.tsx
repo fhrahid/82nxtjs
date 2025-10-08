@@ -13,7 +13,8 @@ import '../styles/mini-schedule-calendar.css';
 
 export const metadata = {
   title: 'Cartup CxP Roster',
-  description: 'Roster Management System (Next.js)'
+  description: 'Roster Management System (Next.js)',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5'
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}) {

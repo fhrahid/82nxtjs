@@ -697,3 +697,128 @@ input:focus, select:focus, textarea:focus {
 @keyframes rotate {
   to { transform:translateY(-50%) rotate(360deg); }
 }
+
+/* ========================================
+   MOBILE RESPONSIVE STYLES
+   ======================================== */
+
+/* Tablets and smaller (768px and below) */
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+  
+  html, body {
+    font-size: 14px;
+  }
+
+  /* Make modals full width on mobile */
+  .modal-content, .edit-modal {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 10px;
+  }
+
+  .modal-header, .edit-modal-header {
+    padding: 12px 16px;
+  }
+
+  .modal-body, .edit-modal-body {
+    padding: 16px;
+    max-height: 70vh;
+  }
+
+  /* Adjust buttons for touch */
+  .btn, .rd-btn, button {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  /* Make form inputs more touch-friendly */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  /* Stack grids on mobile */
+  .team-management-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-grid.two,
+  .form-grid.three {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Make tables scrollable */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Adjust spacing */
+  .section-card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.1rem; }
+  h4 { font-size: 1rem; }
+}
+
+/* Mobile phones (480px and below) */
+@media (max-width: 480px) {
+  :root {
+    font-size: 13px;
+  }
+
+  html, body {
+    font-size: 13px;
+  }
+
+  /* Further reduce padding on small screens */
+  .section-card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .modal-header, .edit-modal-header {
+    padding: 10px 12px;
+  }
+
+  .modal-body, .edit-modal-body {
+    padding: 12px;
+  }
+
+  /* Stack button groups */
+  .rd-bar {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .rd-bar-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .rd-btn {
+    width: 100%;
+  }
+
+  .actions-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .actions-row .btn {
+    width: 100%;
+  }
+
+  h1 { font-size: 1.3rem; }
+  h2 { font-size: 1.15rem; }
+  h3 { font-size: 1rem; }
+  h4 { font-size: 0.95rem; }
+}
