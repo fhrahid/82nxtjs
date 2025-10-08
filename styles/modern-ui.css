@@ -21,23 +21,23 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 0.7rem;
-  color: #7E90A8;
+  color: var(--theme-text-dim, #7E90A8);
   transition: transform 0.2s;
 }
 
 .stat-card:hover .stat-expand-icon {
-  color: #9FB7D5;
+  color: var(--theme-text, #9FB7D5);
 }
 
 .stat-details {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #1F2A37;
+  border-top: 1px solid var(--theme-border, #1F2A37);
   animation: slideDown 0.3s ease-out;
   max-height: 300px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #2E3B4C #121823;
+  scrollbar-color: var(--theme-panel-accent, #2E3B4C) var(--theme-panel-alt, #121823);
 }
 
 .stat-details::-webkit-scrollbar {
@@ -45,12 +45,12 @@
 }
 
 .stat-details::-webkit-scrollbar-track {
-  background: #121823;
+  background: var(--theme-panel-alt, #121823);
   border-radius: 10px;
 }
 
 .stat-details::-webkit-scrollbar-thumb {
-  background: #2E3B4C;
+  background: var(--theme-panel-accent, #2E3B4C);
   border-radius: 10px;
 }
 

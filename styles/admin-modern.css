@@ -196,8 +196,11 @@
 }
 
 .admin-sidebar.collapsed .logout-btn-sidebar {
-  padding: 10px 5px;
+  padding: 10px;
   font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logout-btn-sidebar:hover {

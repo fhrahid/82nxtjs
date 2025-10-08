@@ -138,8 +138,8 @@ header h1 { margin:0 0 8px; font-size:1.5rem; }
 }
 
 .app-container {
-  background:linear-gradient(145deg,#121A24,#0D1219);
-  border:1px solid #1F2832;
+  background:var(--theme-panel, linear-gradient(145deg,#121A24,#0D1219));
+  border:1px solid var(--theme-border, #1F2832);
   padding:26px 28px;
   border-radius:28px;
   position:relative;
@@ -171,10 +171,10 @@ header h1 { margin:0 0 8px; font-size:1.5rem; }
   flex-direction:column;
   gap:10px;
   min-width:220px;
-  background:#141E2A;
+  background:var(--theme-panel-alt, #141E2A);
   padding:14px 16px;
   border-radius:16px;
-  border:1px solid #1F2A37;
+  border:1px solid var(--theme-border, #1F2A37);
   position:relative;
 }
 .sync-controls:before {
@@ -216,12 +216,12 @@ header h1 { margin:0 0 8px; font-size:1.5rem; }
 }
 
 .sync-status {
-  background:#1B2732;
-  border:1px solid #273341;
+  background:var(--theme-panel-accent, #1B2732);
+  border:1px solid var(--theme-border, #273341);
   padding:10px 14px;
   font-size:.55rem;
   letter-spacing:.8px;
-  color:#8CA3BC;
+  color:var(--theme-text-dim, #8CA3BC);
   border-radius:12px;
   text-transform:uppercase;
   font-weight:600;
@@ -240,8 +240,8 @@ header h1 { margin:0 0 8px; font-size:1.5rem; }
 }
 
 .shifts-panel {
-  background:linear-gradient(145deg,#15212D,#0E141A);
-  border:1px solid #1E2B37;
+  background:var(--theme-panel, linear-gradient(145deg,#15212D,#0E141A));
+  border:1px solid var(--theme-border, #1E2B37);
   border-radius:20px;
   padding:28px 24px;
   margin:10px 0 24px;
