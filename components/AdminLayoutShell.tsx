@@ -26,12 +26,21 @@ const tabs = [
   { id:'csv-import', label:'CSV Import', icon: FileUp}
 ];
 
-function AdminLayoutContent({children, adminUser}:{children:React.ReactNode, adminUser:string}) {
+function AdminLayoutContent({children, adminUser, userRole}:{children:React.ReactNode, adminUser:string, userRole?:string}) {
   const [active,setActive]=useState('dashboard');
   const [collapsed,setCollapsed]=useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const { currentTheme, setTheme } = useTheme();
   const themeMenuRef = useRef<HTMLDivElement>(null);
+  const [panelTitle, setPanelTitle] = useState('🛒 Cartup CxP');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
+
+  // Load panel title from localStorage
+  useEffect(() => {
+    const savedTitle = localStorage.getItem('admin-panel-title');
+    if (savedTitle) setPanelTitle(savedTitle);
+  }, []);
 
   // Close theme menu when clicking outside
   useEffect(() => {
@@ -46,12 +55,67 @@ function AdminLayoutContent({children, adminUser}:{children:React.ReactNode, adm
     }
   }, [showThemeMenu]);
 
+  const handleSaveTitle = () => {
+    if (tempTitle.trim()) {
+      setPanelTitle(tempTitle.trim());
+      localStorage.setItem('admin-panel-title', tempTitle.trim());
+    }
+    setIsEditingTitle(false);
+    setTempTitle('');
+  };
+
   return (
     <div className="admin-layout-modern">
       <aside className={`admin-sidebar ${collapsed?'collapsed':''}`}>
         <div className="admin-sidebar-header">
-          <div className="admin-logo">{collapsed ? '🛒' : '🛒 Cartup CxP'}</div>
-          {!collapsed && <div className="admin-subtitle">Admin Panel</div>}
+          <div className="admin-logo" style={{display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center'}}>
+            {collapsed ? '🛒' : (
+              isEditingTitle ? (
+                <input
+                  type="text"
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  onBlur={handleSaveTitle}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSaveTitle()}
+                  autoFocus
+                  style={{
+                    background: 'var(--theme-panel-alt)',
+                    border: '1px solid var(--theme-border)',
+                    color: 'var(--theme-text)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '1.2rem',
+                    width: '100%',
+                    textAlign: 'center'
+                  }}
+                />
+              ) : (
+                <>
+                  <span>{panelTitle}</span>
+                  {(userRole === 'super_admin' || userRole === 'admin') && (
+                    <button
+                      onClick={() => {
+                        setTempTitle(panelTitle);
+                        setIsEditingTitle(true);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--theme-text-dim)',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        padding: '2px'
+                      }}
+                      title="Edit panel title (Admin only)"
+                    >
+                      ✏️
+                    </button>
+                  )}
+                </>
+              )
+            )}
+          </div>
+          {!collapsed && !isEditingTitle && <div className="admin-subtitle">Admin Panel</div>}
         </div>
         
         <button 
@@ -64,6 +128,11 @@ function AdminLayoutContent({children, adminUser}:{children:React.ReactNode, adm
         
         <nav className="admin-sidebar-nav">
           {tabs.map(t=>{
+            // Hide User Management tab for non-admin roles
+            if (t.id === 'user-management' && userRole !== 'super_admin' && userRole !== 'admin') {
+              return null;
+            }
+            
             const IconComponent = t.icon;
             return (
               <button 
@@ -159,10 +228,10 @@ function AdminLayoutContent({children, adminUser}:{children:React.ReactNode, adm
   );
 }
 
-export default function AdminLayoutShell({children, adminUser}:{children:React.ReactNode, adminUser:string}) {
+export default function AdminLayoutShell({children, adminUser, userRole}:{children:React.ReactNode, adminUser:string, userRole?:string}) {
   return (
     <ThemeProvider>
-      <AdminLayoutContent children={children} adminUser={adminUser} />
+      <AdminLayoutContent children={children} adminUser={adminUser} userRole={userRole} />
     </ThemeProvider>
   );
 }
