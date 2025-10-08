@@ -35,7 +35,16 @@ export default function RosterDataTab({id}:Props) {
     if (gRes.ok) setGoogleData(await gRes.json());
     setLoading(false);
   }
-  useEffect(()=>{ load(); },[]);
+  useEffect(() => { 
+    load(); 
+    
+    // Auto-refresh every 5 seconds
+    const interval = setInterval(() => {
+      load();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   async function updateShift(employeeId:string,dateIndex:number,newShift:string) {
     setSaving(true);

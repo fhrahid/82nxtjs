@@ -35,6 +35,9 @@ export default function DashboardTab({ id }: Props) {
   const [showRequestsDetails, setShowRequestsDetails] = useState<string | null>(null);
   const [allRequestsData, setAllRequestsData] = useState<any[]>([]);
   const [modifiedShiftsData, setModifiedShiftsData] = useState<any>(null);
+  const [showTeamHealthDetails, setShowTeamHealthDetails] = useState(false);
+  const [activityPage, setActivityPage] = useState(0);
+  const [activityPerPage, setActivityPerPage] = useState(5);
 
   async function loadDashboard() {
     setLoading(true);
@@ -187,7 +190,16 @@ export default function DashboardTab({ id }: Props) {
     setLoading(false);
   }
 
-  useEffect(() => { loadDashboard(); }, []);
+  useEffect(() => { 
+    loadDashboard(); 
+    
+    // Auto-refresh every 5 seconds
+    const interval = setInterval(() => {
+      loadDashboard();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -399,55 +411,117 @@ export default function DashboardTab({ id }: Props) {
 
         {/* Team Health Overview */}
         <div className="dashboard-card">
-          <h3>👥 Team Health Overview</h3>
+          <h3 
+            style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}
+            onClick={() => setShowTeamHealthDetails(!showTeamHealthDetails)}
+          >
+            👥 Team Health Overview
+            <span style={{fontSize: '0.8rem', opacity: 0.6}}>{showTeamHealthDetails ? '▼' : '▶'}</span>
+          </h3>
           <p style={{fontSize: '0.85rem', color: '#9FB7D5', marginBottom: '15px'}}>
             Health score based on schedule stability (fewer approved changes = healthier team)
           </p>
-          <div className="team-stats-list">
-            {Object.entries(stats.team_stats).map(([teamName, teamData]) => (
-              <div key={teamName} className="team-stat-item">
-                <div className="team-name">{teamName}</div>
-                <div className="team-metrics">
-                  <div className="team-metric">
-                    <span className="metric-label">Employees:</span>
-                    <span className="metric-value">{teamData.total_employees}</span>
-                  </div>
-                  <div className="team-metric">
-                    <span className="metric-label">Schedule Requests:</span>
-                    <span className="metric-value">{teamData.total_requests}</span>
-                  </div>
-                  <div className="team-metric">
-                    <span className="metric-label">Approved Changes:</span>
-                    <span className="metric-value warning">{teamData.approved_requests}</span>
-                  </div>
-                  <div className="team-metric">
-                    <span className="metric-label">Health Score:</span>
-                    <span className={`metric-value ${teamData.health_score >= 80 ? 'success' : teamData.health_score >= 60 ? 'warning' : 'danger'}`}>
-                      {teamData.health_score}%
-                    </span>
-                  </div>
-                </div>
-                <div className="team-bar">
-                  <div 
-                    className={`team-bar-health ${teamData.health_score >= 80 ? 'health-good' : teamData.health_score >= 60 ? 'health-medium' : 'health-poor'}`}
-                    style={{ 
-                      width: `${teamData.health_score}%` 
-                    }}
-                  ></div>
-                </div>
+          
+          {/* Average Health Score - Always visible */}
+          <div style={{
+            padding: '15px',
+            background: 'var(--theme-panel-accent)',
+            borderRadius: '8px',
+            border: '1px solid var(--theme-border)',
+            marginBottom: '15px'
+          }}>
+            <div className="big-stat">
+              <div className="big-stat-label">Average Team Health</div>
+              <div className="big-stat-value" style={{
+                color: (() => {
+                  const avgHealth = Math.round(
+                    Object.values(stats.team_stats).reduce((sum, team) => sum + team.health_score, 0) / 
+                    Object.keys(stats.team_stats).length
+                  );
+                  return avgHealth >= 80 ? '#66BB6A' : avgHealth >= 60 ? '#FFA726' : '#EF5350';
+                })()
+              }}>
+                {Math.round(
+                  Object.values(stats.team_stats).reduce((sum, team) => sum + team.health_score, 0) / 
+                  Object.keys(stats.team_stats).length
+                )}%
               </div>
-            ))}
+            </div>
           </div>
+
+          {/* Detailed Team Stats - Collapsible */}
+          {showTeamHealthDetails && (
+            <div className="team-stats-list">
+              {Object.entries(stats.team_stats).map(([teamName, teamData]) => (
+                <div key={teamName} className="team-stat-item">
+                  <div className="team-name">{teamName}</div>
+                  <div className="team-metrics">
+                    <div className="team-metric">
+                      <span className="metric-label">Employees:</span>
+                      <span className="metric-value">{teamData.total_employees}</span>
+                    </div>
+                    <div className="team-metric">
+                      <span className="metric-label">Schedule Requests:</span>
+                      <span className="metric-value">{teamData.total_requests}</span>
+                    </div>
+                    <div className="team-metric">
+                      <span className="metric-label">Approved Changes:</span>
+                      <span className="metric-value warning">{teamData.approved_requests}</span>
+                    </div>
+                    <div className="team-metric">
+                      <span className="metric-label">Health Score:</span>
+                      <span className={`metric-value ${teamData.health_score >= 80 ? 'success' : teamData.health_score >= 60 ? 'warning' : 'danger'}`}>
+                        {teamData.health_score}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="team-bar">
+                    <div 
+                      className={`team-bar-health ${teamData.health_score >= 80 ? 'health-good' : teamData.health_score >= 60 ? 'health-medium' : 'health-poor'}`}
+                      style={{ 
+                        width: `${teamData.health_score}%` 
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}
         <div className="dashboard-card full-width">
-          <h3>📋 Recent Activity</h3>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+            <h3 style={{margin: 0}}>📋 Recent Activity</h3>
+            <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+              <select 
+                value={activityPerPage} 
+                onChange={(e) => {
+                  setActivityPerPage(Number(e.target.value));
+                  setActivityPage(0);
+                }}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--theme-border)',
+                  background: 'var(--theme-panel)',
+                  color: 'var(--theme-text)',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <option value={5}>5 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={15}>15 per page</option>
+              </select>
+            </div>
+          </div>
           <div className="activity-list">
             {stats.recent_activity.length === 0 ? (
               <div className="no-activity">No recent activity</div>
             ) : (
-              stats.recent_activity.map((activity: any, idx: number) => (
+              stats.recent_activity
+                .slice(activityPage * activityPerPage, (activityPage + 1) * activityPerPage)
+                .map((activity: any, idx: number) => (
                 <div key={idx} className="activity-item">
                   <div className="activity-icon">
                     {activity.activity_type === 'modification' ? '✏️' : 
@@ -506,6 +580,39 @@ export default function DashboardTab({ id }: Props) {
               ))
             )}
           </div>
+          
+          {/* Pagination Controls */}
+          {stats.recent_activity.length > activityPerPage && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '10px',
+              marginTop: '15px',
+              paddingTop: '15px',
+              borderTop: '1px solid var(--theme-border)'
+            }}>
+              <button 
+                className="btn small"
+                disabled={activityPage === 0}
+                onClick={() => setActivityPage(activityPage - 1)}
+                style={{minWidth: '80px'}}
+              >
+                ← Previous
+              </button>
+              <span style={{fontSize: '0.85rem', color: 'var(--theme-text-dim)'}}>
+                Page {activityPage + 1} of {Math.ceil(stats.recent_activity.length / activityPerPage)}
+              </span>
+              <button 
+                className="btn small"
+                disabled={(activityPage + 1) * activityPerPage >= stats.recent_activity.length}
+                onClick={() => setActivityPage(activityPage + 1)}
+                style={{minWidth: '80px'}}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

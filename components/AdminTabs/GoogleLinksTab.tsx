@@ -36,7 +36,16 @@ export default function GoogleLinksTab({id}:Props) {
     else load();
   }
 
-  useEffect(()=>{ load(); },[]);
+  useEffect(() => { 
+    load(); 
+    
+    // Auto-refresh every 5 seconds
+    const interval = setInterval(() => {
+      load();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div id={id} className="tab-pane">

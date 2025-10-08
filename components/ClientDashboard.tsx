@@ -8,7 +8,7 @@ import ShiftView from './ShiftView';
 import MonthCompactCalendar from './Shared/MonthCompactCalendar'; // NEW: plain calendar (replacing colorful mini calendar)
 import { SHIFT_MAP } from '@/lib/constants';
 import { useTheme, themes } from '@/contexts/ThemeContext';
-import { Palette } from 'lucide-react';
+import { Palette, LogOut, RefreshCw, ArrowLeft, Edit, Repeat, Eye } from 'lucide-react';
 
 interface ScheduleData {
   employee: { name:string; id:string; team:string };
@@ -263,26 +263,42 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
       <ParticleBackground />
       <header style={{position: 'relative', zIndex: 1}}>
         <h1>🛒 Cartup CxP Roster Viewer 🛒</h1>
-        <p className="subtitle">Employee Schedule Portal</p>
+        <p className="subtitle">
+          Employee Schedule Portal
+          <span style={{
+            fontSize: '0.65rem', 
+            marginLeft: '12px', 
+            opacity: 0.7,
+            background: 'linear-gradient(90deg, #4A9EFF, #6B5CFF)',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontWeight: 500
+          }}>
+            Developed by Efat Anan Shekh
+          </span>
+        </p>
       </header>
       <div className="app-container" style={{position: 'relative', zIndex: 1}} key={rerenderKey}>
         <div className="app-header">
           <div>
-            <h2>Shift Dashboard <small style={{fontSize:'.6rem', opacity:.6}}>mode:{mode}</small></h2>
+            <h2>Shift Dashboard</h2>
             <div className="user-info" style={{display:'flex', flexDirection:'column', gap:6}}>
               <span>Welcome, <strong>{fullName}</strong> ({employeeId})</span>
               <div className="user-actions" style={{display:'flex', gap:10, flexWrap:'wrap'}}>
-                <button className="logout-btn" onClick={onLogout}>Logout</button>
-                <button className="btn small" onClick={refreshAll} disabled={refreshing}>
-                  {refreshing ? 'Refreshing...' : '🔄 Refresh'}
+                <button className="logout-btn" onClick={onLogout} style={{display:'flex', alignItems:'center', gap:6}}>
+                  <LogOut size={16} /> Logout
+                </button>
+                <button className="btn small" onClick={refreshAll} disabled={refreshing} style={{display:'flex', alignItems:'center', gap:6}}>
+                  <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+                  {refreshing ? 'Refreshing...' : 'Refresh'}
                 </button>
                 {isOther && (
                   <button
                     className="btn small"
                     onClick={resetToMySchedule}
-                    style={{background:'#0d3d74'}}
+                    style={{background:'#0d3d74', display:'flex', alignItems:'center', gap:6}}
                   >
-                    ← Back to My Schedule
+                    <ArrowLeft size={16} /> Back to My Schedule
                   </button>
                 )}
                 <div style={{position: 'relative'}} ref={themeMenuRef}>
@@ -451,9 +467,15 @@ export default function ClientDashboard({employeeId, fullName, onLogout}:Props) 
                   <div className="actions-row" style={{marginBottom: 10, flexWrap: 'wrap'}}>
                     {mode === 'self' && (
                       <>
-                        <button className="btn primary small" onClick={()=>setShowChange(true)}>✏️ Request Shift Change</button>
-                        <button className="btn small" onClick={()=>setShowSwap(true)}>🔁 Request Swap</button>
-                        <button className="btn small" onClick={()=>setShowShiftView(true)}>👁️ Shift View</button>
+                        <button className="btn primary small" onClick={()=>setShowChange(true)} style={{display:'flex', alignItems:'center', gap:6}}>
+                          <Edit size={16} /> Request Shift Change
+                        </button>
+                        <button className="btn small" onClick={()=>setShowSwap(true)} style={{display:'flex', alignItems:'center', gap:6}}>
+                          <Repeat size={16} /> Request Swap
+                        </button>
+                        <button className="btn small" onClick={()=>setShowShiftView(true)} style={{display:'flex', alignItems:'center', gap:6}}>
+                          <Eye size={16} /> Shift View
+                        </button>
                       </>
                     )}
                   </div>

@@ -23,27 +23,6 @@ export interface Theme {
 }
 
 export const themes: Theme[] = [
-  // LIGHT / DAY MODE
-  {
-    id: 'day-light',
-    name: '☀️ Day Light',
-    colors: {
-      bg: '#F5F7FA',
-      panel: '#FFFFFF',
-      panelAlt: '#F8F9FB',
-      panelAccent: '#E8EBF0',
-      text: '#1A202C',
-      textDim: '#4A5568',
-      primary: '#3B82F6',
-      primaryGlow: '#3B82F622',
-      danger: '#EF4444',
-      warn: '#F59E0B',
-      success: '#10B981',
-      border: '#E2E8F0',
-      sidebarBg: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FB 100%)',
-      sidebarBorder: '#E2E8F0',
-    }
-  },
   // BRIGHT COLORS
   {
     id: 'bright-vibrant',

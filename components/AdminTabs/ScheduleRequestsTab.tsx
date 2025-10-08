@@ -106,7 +106,16 @@ export default function ScheduleRequestsTab({id}:Props) {
     );
   }
 
-  useEffect(()=>{ load(); },[]);
+  useEffect(() => { 
+    load(); 
+    
+    // Auto-refresh every 5 seconds
+    const interval = setInterval(() => {
+      load();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div id={id} className="tab-pane">
