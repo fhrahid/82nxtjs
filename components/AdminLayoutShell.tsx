@@ -15,14 +15,23 @@ const tabs = [
 
 export default function AdminLayoutShell({children, adminUser}:{children:React.ReactNode, adminUser:string}) {
   const [active,setActive]=useState('dashboard');
+  const [collapsed,setCollapsed]=useState(false);
 
   return (
     <div className="admin-layout-modern">
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${collapsed?'collapsed':''}`}>
         <div className="admin-sidebar-header">
-          <div className="admin-logo">🛒 Cartup CxP</div>
-          <div className="admin-subtitle">Admin Panel</div>
+          <div className="admin-logo">{collapsed ? '🛒' : '🛒 Cartup CxP'}</div>
+          {!collapsed && <div className="admin-subtitle">Admin Panel</div>}
         </div>
+        
+        <button 
+          className="sidebar-toggle-btn" 
+          onClick={()=>setCollapsed(!collapsed)}
+          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+        >
+          {collapsed ? '▶' : '◀'}
+        </button>
         
         <nav className="admin-sidebar-nav">
           {tabs.map(t=>(
@@ -30,6 +39,7 @@ export default function AdminLayoutShell({children, adminUser}:{children:React.R
               key={t.id} 
               className={`sidebar-nav-item ${active===t.id?'active':''}`} 
               onClick={()=>setActive(t.id)}
+              title={collapsed ? t.label : ''}
             >
               {t.label}
             </button>
@@ -39,21 +49,27 @@ export default function AdminLayoutShell({children, adminUser}:{children:React.R
         <div className="admin-sidebar-footer">
           <div className="admin-user-card">
             <div className="user-icon">👤</div>
-            <div className="user-details">
-              <div className="user-name">{adminUser}</div>
-              <div className="user-role">Administrator</div>
-            </div>
+            {!collapsed && (
+              <div className="user-details">
+                <div className="user-name">{adminUser}</div>
+                <div className="user-role">Administrator</div>
+              </div>
+            )}
           </div>
-          <button className="logout-btn-sidebar" onClick={async()=>{
-            await fetch('/api/admin/logout',{method:'POST'});
-            window.location.href='/admin/login';
-          }}>
-            🚪 Logout
+          <button 
+            className="logout-btn-sidebar" 
+            onClick={async()=>{
+              await fetch('/api/admin/logout',{method:'POST'});
+              window.location.href='/admin/login';
+            }}
+            title={collapsed ? 'Logout' : ''}
+          >
+            {collapsed ? '🚪' : '🚪 Logout'}
           </button>
         </div>
       </aside>
 
-      <main className="admin-main-content">
+      <main className={`admin-main-content ${collapsed?'sidebar-collapsed':''}`}>
         <header className="admin-content-header">
           <h1>{tabs.find(t => t.id === active)?.label || 'Dashboard'}</h1>
           <div className="header-actions">
