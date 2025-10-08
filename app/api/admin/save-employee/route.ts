@@ -8,8 +8,15 @@ export async function POST(req: NextRequest) {
   if (!name || !id || !team) return NextResponse.json({success:false,error:'All fields required'});
   const admin = getAdmin();
   if (action==='add') {
+    // Check if employee already exists in any team and remove them
+    Object.entries(admin.teams).forEach(([t, emps]) => {
+      const idx = emps.findIndex(e => e.id === id);
+      if (idx > -1) {
+        admin.teams[t].splice(idx, 1);
+      }
+    });
     if (!admin.teams[team]) admin.teams[team]=[];
-    admin.teams[team].push({name,id,schedule:Array(admin.headers.length).fill(''), currentTeam:team});
+    admin.teams[team].push({name,id,schedule:Array(admin.headers.length).fill(''), currentTeam:team, team:team});
   } else if (action==='edit') {
     let found = false;
     if (oldTeam && admin.teams[oldTeam]) {
@@ -19,6 +26,7 @@ export async function POST(req: NextRequest) {
         emp.name=name; emp.id=id;
         if (!admin.teams[team]) admin.teams[team]=[];
         emp.currentTeam=team;
+        emp.team=team;
         admin.teams[team].push(emp);
         found = true;
       }
@@ -32,6 +40,7 @@ export async function POST(req: NextRequest) {
             admin.teams[t]=emps.filter(e=>e.id!==id);
             if (!admin.teams[team]) admin.teams[team]=[];
             ee.currentTeam=team;
+            ee.team=team;
             admin.teams[team].push(ee);
           }
           break;
