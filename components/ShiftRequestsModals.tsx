@@ -110,6 +110,7 @@ export function ShiftChangeModal(props:ShiftChangeProps) {
                 setRequested('');
               }}
               showWeekdays
+              showNavigation
             />
           </div>
         ) : (
@@ -382,6 +383,7 @@ export function SwapRequestModal(props:SwapRequestModalProps) {
                 setTargetEmployeeId('');
               }}
               showWeekdays
+              showNavigation
             />
           </div>
         ) : (

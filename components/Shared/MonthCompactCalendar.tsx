@@ -31,6 +31,20 @@ function detectMonth(headers: string[]): {monthIndex:number, name:string}|null {
   return null;
 }
 
+function detectAvailableMonths(headers: string[]): Set<string> {
+  const months = new Set<string>();
+  for (const h of headers) {
+    const m = h.match(/[A-Za-z]+$/);
+    if (m) {
+      const key = m[0].slice(0,3).toLowerCase();
+      if (MONTH_MAP[key] !== undefined) {
+        months.add(key);
+      }
+    }
+  }
+  return months;
+}
+
 export default function MonthCompactCalendar({
   headers,
   selectedDate,
@@ -43,6 +57,7 @@ export default function MonthCompactCalendar({
 
   const { weeks, monthName, monthIndex, year, canGoPrev, canGoNext } = useMemo(()=>{
     const det = detectMonth(headers);
+    const availableMonths = detectAvailableMonths(headers);
     const now = new Date();
     let year = yearHint || now.getFullYear();
     let monthIndex = det ? det.monthIndex : now.getMonth();
@@ -59,6 +74,7 @@ export default function MonthCompactCalendar({
     }
     
     const monthName = MONTH_NAME[monthIndex];
+    const currentMonthKey = monthName.toLowerCase().slice(0, 3);
 
     const lastDay = new Date(year, monthIndex+1, 0).getDate();
     const days = Array.from({length:lastDay}, (_,i)=> i+1);
@@ -94,9 +110,14 @@ export default function MonthCompactCalendar({
       weeks.push(currentWeek as DayCell[]);
     }
 
-    // Check if we can navigate to previous/next months based on available headers
-    const canGoPrev = monthOffset > -12; // Allow going back up to 12 months
-    const canGoNext = monthOffset < 12; // Allow going forward up to 12 months
+    // Check if previous/next months have data in headers
+    const prevMonthIndex = monthIndex === 0 ? 11 : monthIndex - 1;
+    const nextMonthIndex = monthIndex === 11 ? 0 : monthIndex + 1;
+    const prevMonthKey = MONTH_NAME[prevMonthIndex].toLowerCase().slice(0, 3);
+    const nextMonthKey = MONTH_NAME[nextMonthIndex].toLowerCase().slice(0, 3);
+    
+    const canGoPrev = availableMonths.has(prevMonthKey);
+    const canGoNext = availableMonths.has(nextMonthKey);
 
     return { weeks, monthName, monthIndex, year, canGoPrev, canGoNext };
   },[headers, yearHint, monthOffset]);
