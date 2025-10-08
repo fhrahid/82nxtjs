@@ -476,11 +476,11 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-  .admin-sidebar {
+  .admin-sidebar:not(.collapsed) {
     width: 240px;
   }
 
-  .admin-main-content {
+  .admin-main-content:not(.sidebar-collapsed) {
     margin-left: 240px;
   }
 
@@ -491,11 +491,12 @@
 }
 
 @media (max-width: 768px) {
-  .admin-sidebar {
+  /* On mobile, sidebar is collapsed by default */
+  .admin-sidebar:not(.collapsed) {
     width: 80px;
   }
 
-  .admin-main-content {
+  .admin-main-content:not(.sidebar-collapsed) {
     margin-left: 80px;
   }
 
