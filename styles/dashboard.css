@@ -17,6 +17,30 @@
   grid-column: 1 / -1;
 }
 
+.dashboard-card.compact {
+  text-align: center;
+}
+
+.big-stat {
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.big-stat-value {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--theme-primary, #4A7BD0);
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.big-stat-label {
+  font-size: 1rem;
+  color: #9FB7D5;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .dashboard-card h3 {
   margin: 0 0 20px 0;
   color: #E5EAF0;

@@ -16,7 +16,7 @@ export default function UserManagementTab({ id }: Props) {
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('admin');
+  const [role, setRole] = useState('manager');
   const [fullName, setFullName] = useState('');
 
   async function loadUsers() {
@@ -97,7 +97,7 @@ export default function UserManagementTab({ id }: Props) {
     setEditingUser(null);
     setUsername('');
     setPassword('');
-    setRole('admin');
+    setRole('manager');
     setFullName('');
   }
 
@@ -132,7 +132,7 @@ export default function UserManagementTab({ id }: Props) {
                     <td><strong>{u.username}</strong></td>
                     <td>{u.full_name}</td>
                     <td>
-                      <span className={`badge ${u.role === 'super_admin' ? 'primary' : 'secondary'}`}>
+                      <span className={`badge ${u.role === 'manager' ? 'primary' : 'secondary'}`}>
                         {u.role}
                       </span>
                     </td>
@@ -181,9 +181,8 @@ export default function UserManagementTab({ id }: Props) {
           <div>
             <label>Role</label>
             <select value={role} onChange={e => setRole(e.target.value)}>
-              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
               <option value="team_leader">Team Leader</option>
-              <option value="super_admin">Super Admin</option>
             </select>
           </div>
         </div>

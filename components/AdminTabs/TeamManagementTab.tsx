@@ -8,6 +8,57 @@ interface AdminData {
   headers: string[];
 }
 
+// Modal Component
+function EditEmployeeModal({ 
+  employee, 
+  team, 
+  onSave, 
+  onCancel 
+}: { 
+  employee: {id: string, name: string, team: string}, 
+  team: string, 
+  onSave: (name: string, id: string) => void, 
+  onCancel: () => void 
+}) {
+  const [empName, setEmpName] = useState(employee.name);
+  const [empId, setEmpId] = useState(employee.id);
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Edit Employee</h3>
+          <button className="modal-close" onClick={onCancel}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="form-grid two">
+            <div>
+              <label>Name</label>
+              <input 
+                value={empName} 
+                onChange={e => setEmpName(e.target.value)} 
+                placeholder="Full Name"
+              />
+            </div>
+            <div>
+              <label>ID</label>
+              <input 
+                value={empId} 
+                onChange={e => setEmpId(e.target.value.toUpperCase())} 
+                placeholder="EMP ID"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn primary" onClick={() => onSave(empName, empId)}>💾 Save</button>
+          <button className="btn" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TeamManagementTab({id}:Props) {
   const [data,setData]=useState<AdminData>({teams:{}, headers:[]});
   const [selectedTeam,setSelectedTeam]=useState('');
@@ -15,7 +66,7 @@ export default function TeamManagementTab({id}:Props) {
   const [editingTeam,setEditingTeam]=useState<string|null>(null);
   const [empName,setEmpName]=useState('');
   const [empId,setEmpId]=useState('');
-  const [editingEmp,setEditingEmp]=useState<{id:string, team:string}|null>(null);
+  const [editingEmp,setEditingEmp]=useState<{id:string, name:string, team:string}|null>(null);
   const [loading,setLoading]=useState(false);
 
   async function load() {
@@ -86,14 +137,14 @@ export default function TeamManagementTab({id}:Props) {
     } else alert(res.error);
   }
 
-  async function editEmployee() {
-    if (!editingEmp || !empName || !empId || !selectedTeam) return;
+  async function editEmployee(name: string, id: string) {
+    if (!editingEmp || !name || !id || !selectedTeam) return;
     const res = await fetch('/api/admin/save-employee',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        name:empName,
-        id:empId,
+        name: name,
+        id: id,
         team:selectedTeam,
         action:'edit',
         oldId: editingEmp.id,
@@ -124,9 +175,7 @@ export default function TeamManagementTab({id}:Props) {
   }
 
   function startEmpEdit(e:Employee, team:string) {
-    setEditingEmp({id:e.id, team});
-    setEmpName(e.name);
-    setEmpId(e.id);
+    setEditingEmp({id:e.id, name:e.name, team});
   }
 
   return (
@@ -186,7 +235,7 @@ export default function TeamManagementTab({id}:Props) {
                 </tbody>
               </table>
               <div className="employee-form">
-                <h4>{editingEmp? 'Edit Employee' : 'Add Employee'}</h4>
+                <h4>Add Employee</h4>
                 <div className="form-grid two">
                   <div>
                     <label>Name</label>
@@ -198,11 +247,7 @@ export default function TeamManagementTab({id}:Props) {
                   </div>
                 </div>
                 <div className="actions-row">
-                  {!editingEmp && <button className="btn primary small" onClick={addEmployee}>➕ Add Employee</button>}
-                  {editingEmp && <>
-                    <button className="btn primary small" onClick={editEmployee}>💾 Save</button>
-                    <button className="btn small" onClick={()=>{setEditingEmp(null); setEmpName(''); setEmpId('');}}>Cancel</button>
-                  </>}
+                  <button className="btn primary small" onClick={addEmployee}>➕ Add Employee</button>
                 </div>
               </div>
             </>
@@ -210,6 +255,14 @@ export default function TeamManagementTab({id}:Props) {
         </div>
       </div>
       {loading && <div className="inline-loading">Loading team data...</div>}
+      {editingEmp && (
+        <EditEmployeeModal
+          employee={editingEmp}
+          team={selectedTeam}
+          onSave={(name, id) => editEmployee(name, id)}
+          onCancel={() => setEditingEmp(null)}
+        />
+      )}
     </div>
   );
 }

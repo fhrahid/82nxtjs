@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -31,6 +31,20 @@ function AdminLayoutContent({children, adminUser}:{children:React.ReactNode, adm
   const [collapsed,setCollapsed]=useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const { currentTheme, setTheme } = useTheme();
+  const themeMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close theme menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setShowThemeMenu(false);
+      }
+    }
+    if (showThemeMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showThemeMenu]);
 
   return (
     <div className="admin-layout-modern">
@@ -92,7 +106,7 @@ function AdminLayoutContent({children, adminUser}:{children:React.ReactNode, adm
         <header className="admin-content-header">
           <h1>{tabs.find(t => t.id === active)?.label || 'Dashboard'}</h1>
           <div className="header-actions">
-            <div className="theme-switcher-container" style={{position: 'relative'}}>
+            <div className="theme-switcher-container" style={{position: 'relative'}} ref={themeMenuRef}>
               <button 
                 className="btn small theme-switcher-btn" 
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
