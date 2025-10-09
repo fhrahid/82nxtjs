@@ -15,14 +15,22 @@ export default function AdminDataTab({id}:Props) {
 
   const [teamFilter,setTeamFilter]=useState<string>('ALL');
   const [employeeFilter,setEmployeeFilter]=useState<string>('ALL');
-  const [monthLabel,setMonthLabel]=useState<string>('Current Month');
+  const [currentMonth,setCurrentMonth]=useState<string>('');
+  const [availableMonths,setAvailableMonths]=useState<string[]>([]);
 
   async function load() {
     setLoading(true);
-    const aRes = await fetch('/api/admin/get-admin-data');
-    const gRes = await fetch('/api/admin/get-google-data');
+    const [aRes, gRes, configRes] = await Promise.all([
+      fetch('/api/admin/get-admin-data'),
+      fetch('/api/admin/get-google-data'),
+      fetch('/api/admin/get-sync-config').then(r=>r.json())
+    ]);
     if (aRes.ok) setAdminData(await aRes.json());
     if (gRes.ok) setGoogleData(await gRes.json());
+    if (configRes) {
+      setCurrentMonth(configRes.currentMonth || '');
+      setAvailableMonths(configRes.availableMonths || []);
+    }
     setLoading(false);
   }
   useEffect(()=>{ load(); },[]);
@@ -74,8 +82,20 @@ export default function AdminDataTab({id}:Props) {
     return out;
   },[adminData, teamFilter, employeeFilter]);
 
-  function prevMonth() { setMonthLabel('Previous Month (stub)'); }
-  function nextMonth() { setMonthLabel('Next Month (stub)'); }
+  async function handleMonthChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const month = e.target.value;
+    setCurrentMonth(month);
+    const res = await fetch('/api/admin/set-current-month', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({monthYear: month})
+    }).then(r=>r.json());
+    if (res.success) {
+      load();
+    } else {
+      alert(res.error || 'Failed to switch month');
+    }
+  }
 
   async function resetToGoogle() {
     if (!confirm('Reset admin data to Google spreadsheet data? This will remove all manual overrides.')) return;
@@ -99,10 +119,21 @@ export default function AdminDataTab({id}:Props) {
       </p>
 
       <div className="adm-bar">
-        <button className="adm-btn nav" onClick={prevMonth} disabled={loading}>← Previous Month</button>
-        <div className="adm-month">{monthLabel}</div>
+        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+          <label style={{fontWeight: 600}}>Month:</label>
+          <select 
+            value={currentMonth} 
+            onChange={handleMonthChange}
+            disabled={loading}
+            style={{padding: '6px 10px', fontSize: '14px', minWidth: '150px'}}
+          >
+            {availableMonths.length === 0 && <option value="">No data</option>}
+            {availableMonths.map(month => (
+              <option key={month} value={month}>{month}</option>
+            ))}
+          </select>
+        </div>
         <div className="adm-bar-actions">
-          <button className="adm-btn nav" onClick={nextMonth} disabled={loading}>Next Month →</button>
           <button className="adm-btn refresh" onClick={load} disabled={loading || saving}>
             {loading ? 'Loading…' : saving ? 'Saving…' : '🔄 Refresh'}
           </button>
