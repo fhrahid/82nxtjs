@@ -1,26 +1,64 @@
 import fetch from 'node-fetch';
 import { getGoogleLinks, setGoogle } from './dataStore';
 import { RosterData } from './types';
+import { extractMonthFromHeaders } from './utils';
 
-export async function syncGoogleSheets(): Promise<{ employees:number; sheets:number }> {
+export async function syncGoogleSheets(): Promise<{ employees:number; sheets:number; months: string[] }> {
   const links = getGoogleLinks();
-  const urls = Object.values(links);
-  if (!urls.length) throw new Error("No Google Sheets links configured");
-  const aggregated: RosterData = {teams:{}, headers:[], allEmployees:[]};
-
-  for (const url of urls) {
+  if (!Object.keys(links).length) throw new Error("No Google Sheets links configured");
+  
+  const monthsProcessed: string[] = [];
+  let totalEmployees = 0;
+  
+  // Process each month's link separately
+  for (const [monthYear, url] of Object.entries(links)) {
     try {
       const res = await fetch(url);
-      if (!res.ok) continue;
+      if (!res.ok) {
+        console.error(`Failed to fetch sheet for ${monthYear}:`, res.statusText);
+        continue;
+      }
       const text = await res.text();
       const parsed = parseOne(text);
-      merge(aggregated, parsed);
+      
+      // Detect month from headers if monthYear from link is not in standard format
+      const detectedMonth = extractMonthFromHeaders(parsed.headers);
+      const targetMonth = monthYear.match(/^\d{4}-\d{2}$/) ? monthYear : 
+                          (detectedMonth ? convertMonthToYearMonth(detectedMonth, monthYear) : monthYear);
+      
+      // Save this month's data separately
+      setGoogle(parsed, targetMonth);
+      monthsProcessed.push(targetMonth);
+      totalEmployees += parsed.allEmployees.length;
     } catch (e) {
-      console.error("Error loading sheet:", url, e);
+      console.error(`Error loading sheet for ${monthYear}:`, url, e);
     }
   }
-  setGoogle(aggregated);
-  return { employees: aggregated.allEmployees.length, sheets: urls.length };
+  
+  if (monthsProcessed.length === 0) {
+    throw new Error("No sheets were successfully synced");
+  }
+  
+  return { 
+    employees: totalEmployees, 
+    sheets: monthsProcessed.length,
+    months: monthsProcessed
+  };
+}
+
+function convertMonthToYearMonth(monthName: string, fallback: string): string {
+  // Try to extract year from fallback
+  const yearMatch = fallback.match(/\d{4}/);
+  const year = yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
+  
+  const monthMap: Record<string, string> = {
+    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+  };
+  
+  const monthNum = monthMap[monthName];
+  return monthNum ? `${year}-${monthNum}` : fallback;
 }
 
 function parseOne(csvText: string): RosterData {
@@ -50,42 +88,3 @@ function parseOne(csvText: string): RosterData {
   return { teams, headers: dateHeaders, allEmployees };
 }
 
-function merge(base: RosterData, incoming: RosterData) {
-  // unify headers
-  incoming.headers.forEach(h=>{
-    if (!base.headers.includes(h)) base.headers.push(h);
-  });
-  Object.entries(incoming.teams).forEach(([team, emps])=>{
-    if (!base.teams[team]) base.teams[team] = [];
-    emps.forEach(emp=>{
-      const existing = base.teams[team].find(e=>e.id===emp.id);
-      if (existing) {
-        // fill
-        incoming.headers.forEach((hdr,i)=>{
-          const idx = base.headers.indexOf(hdr);
-          if (idx>-1) {
-            existing.schedule[idx] = emp.schedule[i];
-          }
-        });
-      } else {
-        const newEmp = {
-          ...emp,
-          schedule: Array(base.headers.length).fill('')
-        };
-        incoming.headers.forEach((hdr,i)=>{
-          const idx = base.headers.indexOf(hdr);
-            newEmp.schedule[idx] = emp.schedule[i];
-        });
-        base.teams[team].push(newEmp);
-      }
-    });
-  });
-  const all:any[] = [];
-  Object.entries(base.teams).forEach(([team,emps])=>{
-    emps.forEach(e=>{
-      e.currentTeam=team;
-      all.push(e);
-    });
-  });
-  base.allEmployees = all;
-}

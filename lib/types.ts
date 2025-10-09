@@ -73,6 +73,13 @@ export interface ScheduleRequestsFile {
 }
 export interface GoogleLinks { [monthYear: string]: string; }
 
+export interface SyncConfig {
+  autoSyncEnabled: boolean;
+  syncFromLinks: boolean;
+  currentMonth: string;
+  availableMonths: string[];
+}
+
 export interface LoginPayload { username: string; password: string; }
 
 export interface AdminUser {
