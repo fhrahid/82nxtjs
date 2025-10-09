@@ -8,16 +8,27 @@ export default function DataSyncTab({id}:Props) {
   const [syncing,setSyncing]=useState(false);
   const [loading,setLoading]=useState(true);
   const [autoSyncEnabled,setAutoSyncEnabled]=useState(false);
+  const [syncFromLinks,setSyncFromLinks]=useState(true);
+  const [currentMonth,setCurrentMonth]=useState('');
+  const [availableMonths,setAvailableMonths]=useState<string[]>([]);
   const [lastSyncTime,setLastSyncTime]=useState<string>('');
+  const [uploadingCSV,setUploadingCSV]=useState(false);
+  const [csvFile,setCsvFile]=useState<File|null>(null);
+  const [csvMonthYear,setCsvMonthYear]=useState('');
 
   const load = useCallback(async function() {
     setLoading(true);
     try {
-      const disp = await fetch('/api/admin/get-display-data').then(r=>r.json());
-      const gRes = await fetch('/api/admin/get-google-data');
-      const aRes = await fetch('/api/admin/get-admin-data');
+      const [disp, gRes, aRes, configRes] = await Promise.all([
+        fetch('/api/admin/get-display-data').then(r=>r.json()),
+        fetch('/api/admin/get-google-data'),
+        fetch('/api/admin/get-admin-data'),
+        fetch('/api/admin/get-sync-config').then(r=>r.json())
+      ]);
+      
       const g = gRes.ok ? await gRes.json() : null;
       const a = aRes.ok ? await aRes.json() : null;
+      
       setStats({
         employees: disp.allEmployees?.length||0,
         teams: Object.keys(disp.teams||{}).length,
@@ -26,6 +37,14 @@ export default function DataSyncTab({id}:Props) {
       });
       setGoogleStatus(g?.allEmployees?.length? `${g.allEmployees.length} employees loaded` : 'Not loaded');
       setAdminStatus(a?.allEmployees?.length? `${a.allEmployees.length} employees` : 'Not available');
+      
+      // Load sync config
+      if (configRes) {
+        setAutoSyncEnabled(configRes.autoSyncEnabled || false);
+        setSyncFromLinks(configRes.syncFromLinks !== undefined ? configRes.syncFromLinks : true);
+        setCurrentMonth(configRes.currentMonth || '');
+        setAvailableMonths(configRes.availableMonths || []);
+      }
     } catch(e:any){
       console.error(e);
     }
@@ -58,8 +77,63 @@ export default function DataSyncTab({id}:Props) {
     load();
   }, [load]);
 
-  function toggleAutoSync() {
-    setAutoSyncEnabled(!autoSyncEnabled);
+  async function toggleAutoSync() {
+    const newValue = !autoSyncEnabled;
+    setAutoSyncEnabled(newValue);
+    await fetch('/api/admin/set-sync-config', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({autoSyncEnabled: newValue})
+    });
+  }
+  
+  async function toggleSyncFromLinks() {
+    const newValue = !syncFromLinks;
+    setSyncFromLinks(newValue);
+    await fetch('/api/admin/set-sync-config', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({syncFromLinks: newValue})
+    });
+  }
+  
+  async function handleMonthChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const month = e.target.value;
+    setCurrentMonth(month);
+    const res = await fetch('/api/admin/set-current-month', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({monthYear: month})
+    }).then(r=>r.json());
+    if (res.success) {
+      load();
+    } else {
+      alert(res.error || 'Failed to switch month');
+    }
+  }
+  
+  async function handleCSVUpload() {
+    if (!csvFile || !csvMonthYear) {
+      alert('Please select a CSV file and enter month/year');
+      return;
+    }
+    setUploadingCSV(true);
+    const formData = new FormData();
+    formData.append('csv_file', csvFile);
+    formData.append('monthYear', csvMonthYear);
+    
+    const res = await fetch('/api/admin/upload-csv', {
+      method: 'POST',
+      body: formData
+    }).then(r=>r.json());
+    
+    setUploadingCSV(false);
+    alert(res.success ? res.message : res.error);
+    if (res.success) {
+      setCsvFile(null);
+      setCsvMonthYear('');
+      load();
+    }
   }
 
   useEffect(()=>{ load(); },[load]);
@@ -78,29 +152,91 @@ export default function DataSyncTab({id}:Props) {
   return (
     <div id={id} className="tab-pane">
       <h2>Data Sync Management</h2>
-      <p>Sync data from Google Sheets and view system statistics.</p>
-      <div className="actions-row">
-        <button onClick={syncSheets} disabled={syncing} className="btn primary">
-          {syncing? '⏳ Syncing...' : '🔄 Sync Google Sheets Now'}
-        </button>
-        <button 
-          onClick={toggleAutoSync} 
-          disabled={syncing}
-          className={`btn ${autoSyncEnabled ? 'success' : 'secondary'}`}
+      <p>Sync data from Google Sheets or upload CSV files. View system statistics per month.</p>
+      
+      {/* Month Selector */}
+      <div style={{marginBottom: '20px'}}>
+        <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Current Month</label>
+        <select 
+          value={currentMonth} 
+          onChange={handleMonthChange}
+          style={{padding: '8px', fontSize: '14px', minWidth: '200px'}}
         >
-          {autoSyncEnabled ? '✓ Auto-Sync Enabled (5 min)' : '⏱ Enable Auto-Sync (5 min)'}
-        </button>
+          {availableMonths.length === 0 && <option value="">No data available</option>}
+          {availableMonths.map(month => (
+            <option key={month} value={month}>{month}</option>
+          ))}
+        </select>
       </div>
-      {lastSyncTime && (
-        <div style={{marginTop: '10px', fontSize: '0.85rem', color: 'var(--theme-text-dim, #9FB7D5)'}}>
-          Last sync: {lastSyncTime}
+      
+      {/* Sync Configuration */}
+      <div style={{marginBottom: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px'}}>
+        <h3>Sync Configuration</h3>
+        <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
+          <button 
+            onClick={toggleSyncFromLinks} 
+            className={`btn ${syncFromLinks ? 'success' : 'secondary'}`}
+          >
+            {syncFromLinks ? '✓ Sync from Google Sheets Enabled' : '⏸ Sync from Google Sheets Disabled'}
+          </button>
+          <button 
+            onClick={toggleAutoSync} 
+            disabled={syncing}
+            className={`btn ${autoSyncEnabled ? 'success' : 'secondary'}`}
+          >
+            {autoSyncEnabled ? '✓ Auto-Sync Enabled (5 min)' : '⏱ Enable Auto-Sync (5 min)'}
+          </button>
         </div>
-      )}
-      {autoSyncEnabled && (
-        <div style={{marginTop: '5px', fontSize: '0.85rem', color: 'var(--theme-success, #4CAF50)'}}>
-          🔄 Auto-sync is active - syncing every 5 minutes
+      </div>
+      
+      {/* Google Sheets Sync */}
+      <div style={{marginBottom: '20px'}}>
+        <h3>Google Sheets Sync</h3>
+        <div className="actions-row">
+          <button onClick={syncSheets} disabled={syncing || !syncFromLinks} className="btn primary">
+            {syncing? '⏳ Syncing...' : '🔄 Sync Google Sheets Now'}
+          </button>
         </div>
-      )}
+        {lastSyncTime && (
+          <div style={{marginTop: '10px', fontSize: '0.85rem', color: 'var(--theme-text-dim, #9FB7D5)'}}>
+            Last sync: {lastSyncTime}
+          </div>
+        )}
+        {autoSyncEnabled && (
+          <div style={{marginTop: '5px', fontSize: '0.85rem', color: 'var(--theme-success, #4CAF50)'}}>
+            🔄 Auto-sync is active - syncing every 5 minutes
+          </div>
+        )}
+      </div>
+      
+      {/* CSV Upload */}
+      <div style={{marginBottom: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px'}}>
+        <h3>CSV Upload</h3>
+        <p style={{fontSize: '0.9rem', marginBottom: '10px'}}>Upload a CSV file for a specific month</p>
+        <div style={{display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap'}}>
+          <input 
+            type="file" 
+            accept=".csv"
+            onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+            style={{padding: '5px'}}
+          />
+          <input 
+            type="text" 
+            placeholder="Month/Year (e.g., 2024-09)"
+            value={csvMonthYear}
+            onChange={(e) => setCsvMonthYear(e.target.value)}
+            style={{padding: '8px', minWidth: '180px'}}
+          />
+          <button 
+            onClick={handleCSVUpload} 
+            disabled={uploadingCSV || !csvFile || !csvMonthYear}
+            className="btn primary"
+          >
+            {uploadingCSV ? '⏳ Uploading...' : '📤 Upload CSV'}
+          </button>
+        </div>
+      </div>
+      
       <div className="status-grid">
         <div className="status-card">
           <h4>Google Data</h4>

@@ -1,11 +1,12 @@
 import {
   GOOGLE_DATA_FILE, ADMIN_DATA_FILE, MODIFIED_SHIFTS_FILE,
-  GOOGLE_LINKS_FILE, SCHEDULE_REQUESTS_FILE
+  GOOGLE_LINKS_FILE, SCHEDULE_REQUESTS_FILE, SYNC_CONFIG_FILE,
+  getMonthlyGoogleDataFile
 } from './constants';
 import {
-  RosterData, ModifiedShiftsData, ScheduleRequestsFile, GoogleLinks
+  RosterData, ModifiedShiftsData, ScheduleRequestsFile, GoogleLinks, SyncConfig
 } from './types';
-import { readJSON, writeJSON, ensureDataDir, deepCopy, getMonthYearNow } from './utils';
+import { readJSON, writeJSON, ensureDataDir, deepCopy, getMonthYearNow, ensureMonthlyDataDir, listMonthlyDataFiles } from './utils';
 
 let googleData: RosterData = {teams:{}, headers:[], allEmployees:[]};
 let adminData: RosterData = {teams:{}, headers:[], allEmployees:[]};
@@ -18,10 +19,30 @@ let scheduleRequests: ScheduleRequestsFile = {
   pending_count: 0
 };
 let displayData: RosterData = {teams:{}, headers:[], allEmployees:[]};
+let syncConfig: SyncConfig = {
+  autoSyncEnabled: false,
+  syncFromLinks: true,
+  currentMonth: getMonthYearNow(),
+  availableMonths: []
+};
+let currentSelectedMonth: string = getMonthYearNow();
 
 export function loadAll() {
   ensureDataDir();
-  googleData = readJSON(GOOGLE_DATA_FILE, googleData);
+  ensureMonthlyDataDir();
+  syncConfig = readJSON(SYNC_CONFIG_FILE, syncConfig);
+  currentSelectedMonth = syncConfig.currentMonth || getMonthYearNow();
+  syncConfig.availableMonths = listMonthlyDataFiles();
+  
+  // Load monthly Google data for current selected month
+  const monthlyFile = getMonthlyGoogleDataFile(currentSelectedMonth);
+  googleData = readJSON(monthlyFile, {teams:{}, headers:[], allEmployees:[]});
+  
+  // Fallback to legacy google_data.json if no monthly data exists
+  if (!googleData.allEmployees.length) {
+    googleData = readJSON(GOOGLE_DATA_FILE, googleData);
+  }
+  
   adminData = readJSON(ADMIN_DATA_FILE, adminData);
   modifiedShifts = readJSON(MODIFIED_SHIFTS_FILE, modifiedShifts);
   googleLinks = readJSON(GOOGLE_LINKS_FILE, googleLinks);
@@ -29,11 +50,18 @@ export function loadAll() {
   mergeDisplay();
 }
 
-export function saveGoogle() { writeJSON(GOOGLE_DATA_FILE, googleData); }
+export function saveGoogle() { 
+  // Save to monthly file
+  const monthlyFile = getMonthlyGoogleDataFile(currentSelectedMonth);
+  writeJSON(monthlyFile, googleData);
+  // Also save to legacy file for backward compatibility
+  writeJSON(GOOGLE_DATA_FILE, googleData); 
+}
 export function saveAdmin() { writeJSON(ADMIN_DATA_FILE, adminData); }
 export function saveModified() { writeJSON(MODIFIED_SHIFTS_FILE, modifiedShifts); }
 export function saveLinks() { writeJSON(GOOGLE_LINKS_FILE, googleLinks); }
 export function saveRequests() { writeJSON(SCHEDULE_REQUESTS_FILE, scheduleRequests); }
+export function saveSyncConfig() { writeJSON(SYNC_CONFIG_FILE, syncConfig); }
 
 export function getGoogle(): RosterData { return googleData; }
 export function getAdmin(): RosterData { return adminData; }
@@ -41,27 +69,45 @@ export function getDisplay(): RosterData { return displayData; }
 export function getModifiedShifts() { return modifiedShifts; }
 export function getGoogleLinks() { return googleLinks; }
 export function getScheduleRequests() { return scheduleRequests; }
+export function getSyncConfig() { return syncConfig; }
+export function getCurrentMonth() { return currentSelectedMonth; }
+export function getAvailableMonths() { return syncConfig.availableMonths; }
 
-export function setGoogle(data: RosterData) {
-  googleData = deepCopy(data);
-  saveGoogle();
-  if (!adminData || !adminData.headers.length) {
-    adminData = deepCopy(data);
-    saveAdmin();
-  } else {
-    // Add newly discovered employees
-    Object.entries(data.teams).forEach(([teamName, emps])=>{
-      if (!adminData.teams[teamName]) adminData.teams[teamName] = [];
-      emps.forEach(gEmp=>{
-        const exists = adminData.teams[teamName].some(a=>a.id===gEmp.id);
-        if (!exists) {
-          adminData.teams[teamName].push(deepCopy(gEmp));
-        }
+export function setGoogle(data: RosterData, monthYear?: string) {
+  const targetMonth = monthYear || currentSelectedMonth;
+  
+  // Save to monthly file
+  const monthlyFile = getMonthlyGoogleDataFile(targetMonth);
+  writeJSON(monthlyFile, data);
+  
+  // Update available months list
+  syncConfig.availableMonths = listMonthlyDataFiles();
+  saveSyncConfig();
+  
+  // Only update in-memory googleData if it's for the current selected month
+  if (targetMonth === currentSelectedMonth) {
+    googleData = deepCopy(data);
+    // Also save to legacy file for backward compatibility
+    writeJSON(GOOGLE_DATA_FILE, googleData);
+    
+    if (!adminData || !adminData.headers.length) {
+      adminData = deepCopy(data);
+      saveAdmin();
+    } else {
+      // Add newly discovered employees (only for current month)
+      Object.entries(data.teams).forEach(([teamName, emps])=>{
+        if (!adminData.teams[teamName]) adminData.teams[teamName] = [];
+        emps.forEach(gEmp=>{
+          const exists = adminData.teams[teamName].some(a=>a.id===gEmp.id);
+          if (!exists) {
+            adminData.teams[teamName].push(deepCopy(gEmp));
+          }
+        });
       });
-    });
-    saveAdmin();
+      saveAdmin();
+    }
+    mergeDisplay();
   }
-  mergeDisplay();
 }
 
 export function setAdmin(data: RosterData) {
@@ -165,6 +211,33 @@ export function addGoogleLink(monthYear: string, link: string) {
 export function deleteGoogleLink(monthYear: string) {
   delete googleLinks[monthYear];
   saveLinks();
+}
+
+export function setSyncConfig(config: Partial<SyncConfig>) {
+  syncConfig = { ...syncConfig, ...config };
+  saveSyncConfig();
+}
+
+export function setCurrentMonth(monthYear: string) {
+  currentSelectedMonth = monthYear;
+  syncConfig.currentMonth = monthYear;
+  saveSyncConfig();
+  
+  // Load monthly Google data for the selected month
+  const monthlyFile = getMonthlyGoogleDataFile(monthYear);
+  googleData = readJSON(monthlyFile, {teams:{}, headers:[], allEmployees:[]});
+  
+  // If no monthly data, try legacy file
+  if (!googleData.allEmployees.length) {
+    googleData = readJSON(GOOGLE_DATA_FILE, googleData);
+  }
+  
+  mergeDisplay();
+}
+
+export function getGoogleDataForMonth(monthYear: string): RosterData {
+  const monthlyFile = getMonthlyGoogleDataFile(monthYear);
+  return readJSON(monthlyFile, {teams:{}, headers:[], allEmployees:[]});
 }
 
 export function resetAdminToGoogle() {

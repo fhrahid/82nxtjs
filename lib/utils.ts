@@ -119,3 +119,27 @@ export function arrayUnique<T>(arr: T[]) {
 export function sleep(ms:number) {
   return new Promise(r=>setTimeout(r,ms));
 }
+
+export function ensureMonthlyDataDir() {
+  const monthlyDir = path.join(DATA_DIR, 'monthly');
+  try {
+    fs.mkdirSync(monthlyDir, { recursive: true });
+  } catch {
+    // Directory already exists or can't be created
+  }
+}
+
+export function listMonthlyDataFiles(): string[] {
+  const monthlyDir = path.join(DATA_DIR, 'monthly');
+  try {
+    ensureMonthlyDataDir();
+    const files = fs.readdirSync(monthlyDir);
+    return files
+      .filter(f => f.startsWith('google_data_') && f.endsWith('.json'))
+      .map(f => f.replace('google_data_', '').replace('.json', ''))
+      .sort()
+      .reverse();
+  } catch {
+    return [];
+  }
+}
