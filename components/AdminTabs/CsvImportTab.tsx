@@ -25,9 +25,12 @@ export default function CsvImportTab({id}:Props) {
         const data = await res.json();
         if (data.headers && data.headers.length > 0) {
           const monthsSet = new Set<string>();
+          const validMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           data.headers.forEach((h: string) => {
             const match = h.match(/[A-Za-z]+/);
-            if (match) monthsSet.add(match[0]);
+            if (match && validMonths.includes(match[0])) {
+              monthsSet.add(match[0]);
+            }
           });
           setAvailableMonths(Array.from(monthsSet));
         }
