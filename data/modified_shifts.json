@@ -1,27 +1,4 @@
 {
-  "modifications": [
-    {
-      "employee_id": "SLL-88818",
-      "date_index": 10,
-      "old_shift": "D2",
-      "new_shift": "M3",
-      "employee_name": "Nazmul Hossain",
-      "team_name": "VOICE",
-      "date_header": "Date_10",
-      "modified_by": "istiaque",
-      "timestamp": "2025-10-08T21:18:40.967Z",
-      "month_year": "2025-10"
-    }
-  ],
-  "monthly_stats": {
-    "2025-10": {
-      "total_modifications": 1,
-      "employees_modified": [
-        "SLL-88818"
-      ],
-      "modifications_by_user": {
-        "istiaque": 1
-      }
-    }
-  }
+  "modifications": [],
+  "monthly_stats": {}
 }
