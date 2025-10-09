@@ -246,29 +246,150 @@ input:focus, select:focus, textarea:focus {
 .import-box {
   background:var(--panel);
   border:1px solid var(--border);
-  padding:18px;
-  border-radius:var(--radius);
-  max-width:650px;
+  padding:24px;
+  border-radius:12px;
+  max-width:700px;
+  box-shadow:0 4px 15px rgba(0,0,0,.15);
 }
 
 .file-label {
-  background:linear-gradient(135deg,#222B3A,#1A212E);
-  border:1px dashed #334459;
-  padding:16px;
-  border-radius:12px;
+  background:linear-gradient(135deg,#1E2736,#151D2A);
+  border:2px dashed #3A4A62;
+  padding:32px 24px;
+  border-radius:14px;
   cursor:pointer;
-  display:block;
-  margin-bottom:14px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:18px;
   text-align:center;
-  font-size:.8rem;
-  color:#8FA2BA;
-  transition:.2s;
+  font-size:.95rem;
+  color:#9FB7D5;
+  font-weight:500;
+  transition:all .3s ease;
+  position:relative;
+  overflow:hidden;
 }
-.file-label:hover { background:#253041; border-color:#476489; }
+.file-label::before {
+  content:'📁';
+  font-size:2.5rem;
+  opacity:.7;
+  transition:all .3s ease;
+}
+.file-label:hover {
+  background:linear-gradient(135deg,#243447,#1A2533);
+  border-color:#5A7BA0;
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(74,123,208,.15);
+}
+.file-label:hover::before {
+  transform:scale(1.1);
+  opacity:1;
+}
 
 .file-label input { display:none; }
 
-.import-message { margin-top:10px; font-size:.7rem; color:#9BB5D7; }
+.file-label .file-name {
+  font-weight:600;
+  color:#D6E6F4;
+  font-size:1rem;
+}
+
+.import-message { 
+  margin-top:12px; 
+  padding:10px 14px; 
+  font-size:.85rem; 
+  color:#9BB5D7; 
+  background:rgba(74,123,208,.1);
+  border-radius:8px;
+  border-left:3px solid var(--primary);
+}
+
+/* Modern Radio Buttons */
+.radio-group {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:18px;
+}
+
+.radio-option {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  background:linear-gradient(135deg,#1A2332,#141C29);
+  border:2px solid #2A3745;
+  border-radius:10px;
+  cursor:pointer;
+  transition:all .3s ease;
+  font-size:.9rem;
+  font-weight:500;
+  color:#B5CAE0;
+}
+
+.radio-option:hover {
+  border-color:#4A7BD0;
+  background:linear-gradient(135deg,#1E2838,#171F2D);
+  transform:translateX(4px);
+}
+
+.radio-option input[type="radio"] {
+  width:20px;
+  height:20px;
+  margin:0;
+  cursor:pointer;
+  accent-color:#4A7BD0;
+}
+
+.radio-option.checked {
+  border-color:#4A7BD0;
+  background:linear-gradient(135deg,#223447,#1A2533);
+  box-shadow:0 0 0 3px rgba(74,123,208,.15);
+}
+
+/* Month Selection Pills */
+.month-pills {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+
+.month-pill {
+  padding:10px 18px;
+  font-size:.9rem;
+  font-weight:600;
+  border-radius:20px;
+  border:2px solid #2A3745;
+  background:linear-gradient(135deg,#1A2332,#141C29);
+  color:#8FA2BA;
+  cursor:pointer;
+  transition:all .3s ease;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+
+.month-pill:hover {
+  border-color:#4A7BD0;
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(74,123,208,.2);
+}
+
+.month-pill.selected {
+  background:linear-gradient(135deg,#4A7BD0,#3A6AB8);
+  border-color:#4A7BD0;
+  color:#FFF;
+  box-shadow:0 4px 12px rgba(74,123,208,.4);
+}
+
+.month-pill.selected::before {
+  content:'✓';
+  font-weight:700;
+}
 
 .stat-chip {
   background:#1C2535;
