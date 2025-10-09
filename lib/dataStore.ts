@@ -1,6 +1,6 @@
 import {
   GOOGLE_DATA_FILE, ADMIN_DATA_FILE, MODIFIED_SHIFTS_FILE,
-  GOOGLE_LINKS_FILE, SCHEDULE_REQUESTS_FILE
+  GOOGLE_LINKS_FILE, SCHEDULE_REQUESTS_FILE, SETTINGS_FILE
 } from './constants';
 import {
   RosterData, ModifiedShiftsData, ScheduleRequestsFile, GoogleLinks
@@ -18,6 +18,7 @@ let scheduleRequests: ScheduleRequestsFile = {
   pending_count: 0
 };
 let displayData: RosterData = {teams:{}, headers:[], allEmployees:[]};
+let settings: {autoSyncEnabled: boolean} = {autoSyncEnabled: false};
 
 export function loadAll() {
   ensureDataDir();
@@ -26,6 +27,7 @@ export function loadAll() {
   modifiedShifts = readJSON(MODIFIED_SHIFTS_FILE, modifiedShifts);
   googleLinks = readJSON(GOOGLE_LINKS_FILE, googleLinks);
   scheduleRequests = readJSON(SCHEDULE_REQUESTS_FILE, scheduleRequests);
+  settings = readJSON(SETTINGS_FILE, settings);
   
   // Apply deduplication to clean up any existing duplicate employees from team changes
   deduplicateEmployeeTeamChanges(googleData);
@@ -41,6 +43,7 @@ export function saveAdmin() { writeJSON(ADMIN_DATA_FILE, adminData); }
 export function saveModified() { writeJSON(MODIFIED_SHIFTS_FILE, modifiedShifts); }
 export function saveLinks() { writeJSON(GOOGLE_LINKS_FILE, googleLinks); }
 export function saveRequests() { writeJSON(SCHEDULE_REQUESTS_FILE, scheduleRequests); }
+export function saveSettings() { writeJSON(SETTINGS_FILE, settings); }
 
 export function getGoogle(): RosterData { return googleData; }
 export function getAdmin(): RosterData { return adminData; }
@@ -48,6 +51,7 @@ export function getDisplay(): RosterData { return displayData; }
 export function getModifiedShifts() { return modifiedShifts; }
 export function getGoogleLinks() { return googleLinks; }
 export function getScheduleRequests() { return scheduleRequests; }
+export function getSettings() { return settings; }
 
 export function setGoogle(data: RosterData) {
   googleData = deepCopy(data);
@@ -371,6 +375,15 @@ export function findEmployeeInGoogle(employeeId: string) {
     }
   }
   return null;
+}
+
+export function setAutoSyncEnabled(enabled: boolean) {
+  settings.autoSyncEnabled = enabled;
+  saveSettings();
+}
+
+export function getAutoSyncEnabled() {
+  return settings.autoSyncEnabled;
 }
 
 // IMPORTANT: call loadAll() initially

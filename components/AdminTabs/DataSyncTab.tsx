@@ -16,8 +16,10 @@ export default function DataSyncTab({id}:Props) {
       const disp = await fetch('/api/admin/get-display-data').then(r=>r.json());
       const gRes = await fetch('/api/admin/get-google-data');
       const aRes = await fetch('/api/admin/get-admin-data');
+      const settingsRes = await fetch('/api/admin/get-settings');
       const g = gRes.ok ? await gRes.json() : null;
       const a = aRes.ok ? await aRes.json() : null;
+      const settings = settingsRes.ok ? await settingsRes.json() : {autoSyncEnabled: false};
       setStats({
         employees: disp.allEmployees?.length||0,
         teams: Object.keys(disp.teams||{}).length,
@@ -26,6 +28,7 @@ export default function DataSyncTab({id}:Props) {
       });
       setGoogleStatus(g?.allEmployees?.length? `${g.allEmployees.length} employees loaded` : 'Not loaded');
       setAdminStatus(a?.allEmployees?.length? `${a.allEmployees.length} employees` : 'Not available');
+      setAutoSyncEnabled(settings.autoSyncEnabled || false);
     } catch(e:any){
       console.error(e);
     }
@@ -58,8 +61,19 @@ export default function DataSyncTab({id}:Props) {
     load();
   }, [load]);
 
-  function toggleAutoSync() {
-    setAutoSyncEnabled(!autoSyncEnabled);
+  async function toggleAutoSync() {
+    const newValue = !autoSyncEnabled;
+    try {
+      await fetch('/api/admin/set-auto-sync', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({enabled: newValue})
+      });
+      setAutoSyncEnabled(newValue);
+    } catch(e) {
+      console.error('Failed to toggle auto-sync:', e);
+      alert('Failed to update auto-sync setting');
+    }
   }
 
   useEffect(()=>{ load(); },[load]);
