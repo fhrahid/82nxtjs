@@ -15,7 +15,6 @@ export default function AdminDataTab({id}:Props) {
 
   const [teamFilter,setTeamFilter]=useState<string>('ALL');
   const [employeeFilter,setEmployeeFilter]=useState<string>('ALL');
-  const [currentMonth,setCurrentMonth]=useState<string>('');
   const [availableMonths,setAvailableMonths]=useState<string[]>([]);
 
   async function load() {
@@ -28,7 +27,6 @@ export default function AdminDataTab({id}:Props) {
     if (aRes.ok) setAdminData(await aRes.json());
     if (gRes.ok) setGoogleData(await gRes.json());
     if (configRes) {
-      setCurrentMonth(configRes.currentMonth || '');
       setAvailableMonths(configRes.availableMonths || []);
     }
     setLoading(false);
@@ -82,20 +80,7 @@ export default function AdminDataTab({id}:Props) {
     return out;
   },[adminData, teamFilter, employeeFilter]);
 
-  async function handleMonthChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const month = e.target.value;
-    setCurrentMonth(month);
-    const res = await fetch('/api/admin/set-current-month', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({monthYear: month})
-    }).then(r=>r.json());
-    if (res.success) {
-      load();
-    } else {
-      alert(res.error || 'Failed to switch month');
-    }
-  }
+  // Removed: handleMonthChange - no longer needed as all months are loaded
 
   async function resetToGoogle() {
     if (!confirm('Reset admin data to Google spreadsheet data? This will remove all manual overrides.')) return;
@@ -119,20 +104,26 @@ export default function AdminDataTab({id}:Props) {
       </p>
 
       <div className="adm-bar">
-        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-          <label style={{fontWeight: 600}}>Month:</label>
-          <select 
-            value={currentMonth} 
-            onChange={handleMonthChange}
-            disabled={loading}
-            style={{padding: '6px 10px', fontSize: '14px', minWidth: '150px'}}
-          >
-            {availableMonths.length === 0 && <option value="">No data</option>}
+        {availableMonths.length > 0 && (
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
+            <label style={{fontWeight: 600, fontSize: '13px'}}>📅 Loaded Months:</label>
             {availableMonths.map(month => (
-              <option key={month} value={month}>{month}</option>
+              <span 
+                key={month}
+                style={{
+                  padding: '4px 10px',
+                  background: '#1f5d94',
+                  color: '#e8f3fa',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '500'
+                }}
+              >
+                {month}
+              </span>
             ))}
-          </select>
-        </div>
+          </div>
+        )}
         <div className="adm-bar-actions">
           <button className="adm-btn refresh" onClick={load} disabled={loading || saving}>
             {loading ? 'Loading…' : saving ? 'Saving…' : '🔄 Refresh'}

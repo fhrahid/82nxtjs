@@ -9,7 +9,6 @@ export default function DataSyncTab({id}:Props) {
   const [loading,setLoading]=useState(true);
   const [autoSyncEnabled,setAutoSyncEnabled]=useState(false);
   const [syncFromLinks,setSyncFromLinks]=useState(true);
-  const [currentMonth,setCurrentMonth]=useState('');
   const [availableMonths,setAvailableMonths]=useState<string[]>([]);
   const [lastSyncTime,setLastSyncTime]=useState<string>('');
   const [uploadingCSV,setUploadingCSV]=useState(false);
@@ -42,7 +41,6 @@ export default function DataSyncTab({id}:Props) {
       if (configRes) {
         setAutoSyncEnabled(configRes.autoSyncEnabled || false);
         setSyncFromLinks(configRes.syncFromLinks !== undefined ? configRes.syncFromLinks : true);
-        setCurrentMonth(configRes.currentMonth || '');
         setAvailableMonths(configRes.availableMonths || []);
       }
     } catch(e:any){
@@ -97,20 +95,7 @@ export default function DataSyncTab({id}:Props) {
     });
   }
   
-  async function handleMonthChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const month = e.target.value;
-    setCurrentMonth(month);
-    const res = await fetch('/api/admin/set-current-month', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({monthYear: month})
-    }).then(r=>r.json());
-    if (res.success) {
-      load();
-    } else {
-      alert(res.error || 'Failed to switch month');
-    }
-  }
+  // Removed: handleMonthChange - no longer needed as all months are loaded
   
   async function handleCSVUpload() {
     if (!csvFile || !csvMonthYear) {
@@ -152,22 +137,33 @@ export default function DataSyncTab({id}:Props) {
   return (
     <div id={id} className="tab-pane">
       <h2>Data Sync Management</h2>
-      <p>Sync data from Google Sheets or upload CSV files. View system statistics per month.</p>
+      <p>Sync data from Google Sheets or upload CSV files. All months are loaded automatically.</p>
       
-      {/* Month Selector */}
-      <div style={{marginBottom: '20px'}}>
-        <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Current Month</label>
-        <select 
-          value={currentMonth} 
-          onChange={handleMonthChange}
-          style={{padding: '8px', fontSize: '14px', minWidth: '200px'}}
-        >
-          {availableMonths.length === 0 && <option value="">No data available</option>}
-          {availableMonths.map(month => (
-            <option key={month} value={month}>{month}</option>
-          ))}
-        </select>
-      </div>
+      {/* Available Months Display */}
+      {availableMonths.length > 0 && (
+        <div style={{marginBottom: '20px', padding: '12px', background: '#f0f8ff', borderRadius: '8px'}}>
+          <label style={{display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333'}}>
+            📅 Available Months ({availableMonths.length}):
+          </label>
+          <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+            {availableMonths.map(month => (
+              <span 
+                key={month} 
+                style={{
+                  padding: '6px 12px', 
+                  background: '#4a90e2', 
+                  color: 'white', 
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}
+              >
+                {month}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Sync Configuration */}
       <div style={{marginBottom: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px'}}>
