@@ -26,6 +26,13 @@ export function loadAll() {
   modifiedShifts = readJSON(MODIFIED_SHIFTS_FILE, modifiedShifts);
   googleLinks = readJSON(GOOGLE_LINKS_FILE, googleLinks);
   scheduleRequests = readJSON(SCHEDULE_REQUESTS_FILE, scheduleRequests);
+  
+  // Apply deduplication to clean up any existing duplicate employees from team changes
+  deduplicateEmployeeTeamChanges(googleData);
+  deduplicateEmployeeTeamChanges(adminData);
+  saveGoogle();
+  saveAdmin();
+  
   mergeDisplay();
 }
 
@@ -44,9 +51,11 @@ export function getScheduleRequests() { return scheduleRequests; }
 
 export function setGoogle(data: RosterData) {
   googleData = deepCopy(data);
+  deduplicateEmployeeTeamChanges(googleData);
   saveGoogle();
   if (!adminData || !adminData.headers.length) {
     adminData = deepCopy(data);
+    deduplicateEmployeeTeamChanges(adminData);
     saveAdmin();
   } else {
     // Add newly discovered employees
@@ -59,6 +68,7 @@ export function setGoogle(data: RosterData) {
         }
       });
     });
+    deduplicateEmployeeTeamChanges(adminData);
     saveAdmin();
   }
   mergeDisplay();
@@ -66,6 +76,7 @@ export function setGoogle(data: RosterData) {
 
 export function setAdmin(data: RosterData) {
   adminData = deepCopy(data);
+  deduplicateEmployeeTeamChanges(adminData);
   saveAdmin();
   mergeDisplay();
 }
@@ -91,9 +102,91 @@ function rebuildAllEmployees(data: RosterData) {
   data.allEmployees = Array.from(employeeMap.values());
 }
 
+/**
+ * Smart deduplication function to handle employees who changed teams between months.
+ * This function:
+ * 1. Identifies duplicate employees (same ID across different teams)
+ * 2. Determines the "promoted" team based on which team has the most recent schedule data
+ * 3. Merges all schedule data into a single entry under the promoted team
+ * 4. Updates team assignment to reflect the promoted team
+ */
+function deduplicateEmployeeTeamChanges(data: RosterData) {
+  if (!data.headers || data.headers.length === 0) return;
+  
+  // Step 1: Find all duplicate employee IDs across teams
+  const employeeTeamMap = new Map<string, { team: string; employee: any }[]>();
+  
+  Object.entries(data.teams).forEach(([teamName, employees]) => {
+    employees.forEach(emp => {
+      if (!employeeTeamMap.has(emp.id)) {
+        employeeTeamMap.set(emp.id, []);
+      }
+      employeeTeamMap.get(emp.id)!.push({ team: teamName, employee: emp });
+    });
+  });
+  
+  // Step 2: Process each duplicate employee
+  employeeTeamMap.forEach((entries, employeeId) => {
+    if (entries.length <= 1) return; // No duplicates, skip
+    
+    // Step 3: Determine the "promoted" team (team with most recent schedule data)
+    let promotedTeam: string | null = null;
+    let latestScheduleIndex = -1;
+    
+    entries.forEach(({ team, employee }) => {
+      // Find the last non-empty schedule entry
+      for (let i = employee.schedule.length - 1; i >= 0; i--) {
+        const shift = employee.schedule[i];
+        if (shift && shift !== '' && shift !== 'N/A') {
+          if (i > latestScheduleIndex) {
+            latestScheduleIndex = i;
+            promotedTeam = team;
+          }
+          break;
+        }
+      }
+    });
+    
+    // If no promoted team found (all schedules are empty), use the last team in entries
+    if (!promotedTeam) {
+      promotedTeam = entries[entries.length - 1].team;
+    }
+    
+    // Step 4: Merge all schedule data into the promoted team entry
+    const promotedEntry = entries.find(e => e.team === promotedTeam)!;
+    const mergedSchedule = Array(data.headers.length).fill('');
+    
+    // Merge schedules from all team entries
+    entries.forEach(({ employee }) => {
+      employee.schedule.forEach((shift: string, index: number) => {
+        if (shift && shift !== '' && shift !== 'N/A') {
+          mergedSchedule[index] = shift;
+        }
+      });
+    });
+    
+    // Update the promoted entry with merged schedule
+    promotedEntry.employee.schedule = mergedSchedule;
+    promotedEntry.employee.currentTeam = promotedTeam;
+    promotedEntry.employee.team = promotedTeam;
+    
+    // Step 5: Remove duplicate entries from other teams
+    entries.forEach(({ team, employee }) => {
+      if (team !== promotedTeam) {
+        const teamEmployees = data.teams[team];
+        const idx = teamEmployees.findIndex(e => e.id === employee.id);
+        if (idx > -1) {
+          teamEmployees.splice(idx, 1);
+        }
+      }
+    });
+  });
+}
+
 export function mergeDisplay() {
   if (!googleData || !googleData.headers.length) {
     displayData = deepCopy(adminData);
+    deduplicateEmployeeTeamChanges(displayData);
     rebuildAllEmployees(displayData);
     return;
   }
@@ -109,6 +202,7 @@ export function mergeDisplay() {
       delete base.teams[team];
     }
   });
+  deduplicateEmployeeTeamChanges(base);
   rebuildAllEmployees(base);
   base.headers = adminData.headers.length ? adminData.headers : base.headers;
   displayData = base;
@@ -169,6 +263,7 @@ export function deleteGoogleLink(monthYear: string) {
 
 export function resetAdminToGoogle() {
   adminData = deepCopy(googleData);
+  deduplicateEmployeeTeamChanges(adminData);
   saveAdmin();
   mergeDisplay();
 }
