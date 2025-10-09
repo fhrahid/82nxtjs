@@ -58,9 +58,28 @@ function merge(base: RosterData, incoming: RosterData) {
   Object.entries(incoming.teams).forEach(([team, emps])=>{
     if (!base.teams[team]) base.teams[team] = [];
     emps.forEach(emp=>{
+      // Check if employee exists in ANY OTHER team and remove them
+      // This handles team changes (e.g., promotions from Voice to CS IR)
+      Object.entries(base.teams).forEach(([otherTeam, otherEmps])=>{
+        if (otherTeam !== team) {
+          const idx = otherEmps.findIndex(e=>e.id===emp.id);
+          if (idx > -1) {
+            // Employee found in different team, remove them
+            base.teams[otherTeam].splice(idx, 1);
+          }
+        }
+      });
+      
       const existing = base.teams[team].find(e=>e.id===emp.id);
       if (existing) {
-        // fill
+        // Update existing employee in current team
+        existing.currentTeam = team;
+        existing.team = team;
+        // Ensure schedule is long enough
+        while (existing.schedule.length < base.headers.length) {
+          existing.schedule.push('');
+        }
+        // Fill in schedule data
         incoming.headers.forEach((hdr,i)=>{
           const idx = base.headers.indexOf(hdr);
           if (idx>-1) {
@@ -68,8 +87,11 @@ function merge(base: RosterData, incoming: RosterData) {
           }
         });
       } else {
+        // Add new employee to current team
         const newEmp = {
           ...emp,
+          currentTeam: team,
+          team: team,
           schedule: Array(base.headers.length).fill('')
         };
         incoming.headers.forEach((hdr,i)=>{
@@ -80,12 +102,16 @@ function merge(base: RosterData, incoming: RosterData) {
       }
     });
   });
-  const all:any[] = [];
+  
+  // Rebuild allEmployees with deduplication by employee ID
+  const employeeMap = new Map<string, any>();
   Object.entries(base.teams).forEach(([team,emps])=>{
     emps.forEach(e=>{
-      e.currentTeam=team;
-      all.push(e);
+      e.currentTeam = team;
+      e.team = team;
+      // Map will keep the last occurrence (most recent team)
+      employeeMap.set(e.id, e);
     });
   });
-  base.allEmployees = all;
+  base.allEmployees = Array.from(employeeMap.values());
 }

@@ -139,15 +139,17 @@ export function mergeCsvIntoGoogle(existing: RosterData, rawRows: string[][]) {
     });
   });
 
-  // rebuild allEmployees
-  const all: Employee[] = [];
+  // rebuild allEmployees with deduplication by employee ID
+  const employeeMap = new Map<string, Employee>();
   Object.entries(existing.teams).forEach(([team, emps])=>{
     emps.forEach(e=>{
       e.currentTeam = team;
-      all.push(e);
+      e.team = team;
+      // Map will keep the last occurrence (most recent team)
+      employeeMap.set(e.id, e);
     });
   });
-  existing.allEmployees = all;
+  existing.allEmployees = Array.from(employeeMap.values());
   existing.headers = newHeaders;
   return { normalized, detectedMonth };
 }
