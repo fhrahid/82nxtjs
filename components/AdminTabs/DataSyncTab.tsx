@@ -9,6 +9,7 @@ export default function DataSyncTab({id}:Props) {
   const [loading,setLoading]=useState(true);
   const [autoSyncEnabled,setAutoSyncEnabled]=useState(false);
   const [lastSyncTime,setLastSyncTime]=useState<string>('');
+  const [syncMessage,setSyncMessage]=useState<{text:string, type:'success'|'error'}>({text:'', type:'success'});
 
   const load = useCallback(async function() {
     setLoading(true);
@@ -54,10 +55,14 @@ export default function DataSyncTab({id}:Props) {
 
   const syncSheets = useCallback(async function() {
     setSyncing(true);
+    setSyncMessage({text:'', type:'success'});
     const res = await fetch('/api/admin/sync-google-sheets',{method:'POST'}).then(r=>r.json());
     setSyncing(false);
     setLastSyncTime(new Date().toLocaleTimeString());
-    alert(res.success? res.message : res.error);
+    setSyncMessage({
+      text: res.success ? res.message : res.error,
+      type: res.success ? 'success' : 'error'
+    });
     load();
   }, [load]);
 
@@ -70,9 +75,16 @@ export default function DataSyncTab({id}:Props) {
         body: JSON.stringify({enabled: newValue})
       });
       setAutoSyncEnabled(newValue);
+      setSyncMessage({
+        text: newValue ? 'Auto-sync enabled successfully' : 'Auto-sync disabled',
+        type: 'success'
+      });
     } catch(e) {
       console.error('Failed to toggle auto-sync:', e);
-      alert('Failed to update auto-sync setting');
+      setSyncMessage({
+        text: 'Failed to update auto-sync setting',
+        type: 'error'
+      });
     }
   }
 
@@ -105,6 +117,20 @@ export default function DataSyncTab({id}:Props) {
           {autoSyncEnabled ? '✓ Auto-Sync Enabled (5 min)' : '⏱ Enable Auto-Sync (5 min)'}
         </button>
       </div>
+      {syncMessage.text && (
+        <div style={{
+          marginTop: '12px',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          fontSize: '0.9rem',
+          background: syncMessage.type === 'success' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)',
+          border: `2px solid ${syncMessage.type === 'success' ? '#4CAF50' : '#F44336'}`,
+          color: syncMessage.type === 'success' ? '#6FD99F' : '#FF8A80',
+          fontWeight: 500
+        }}>
+          {syncMessage.type === 'success' ? '✓' : '✗'} {syncMessage.text}
+        </div>
+      )}
       {lastSyncTime && (
         <div style={{marginTop: '10px', fontSize: '0.85rem', color: 'var(--theme-text-dim, #9FB7D5)'}}>
           Last sync: {lastSyncTime}
