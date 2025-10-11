@@ -127,11 +127,21 @@ export default function CsvImportTab({id}:Props) {
       <div className="import-box">
         <label className="file-label">
           <input type="file" accept=".csv" onChange={e=>setFile(e.target.files?.[0]||null)}/>
-          {file? `Selected: ${file.name}` : 'Choose CSV File'}
+          {file ? (
+            <>
+              <span className="file-name">{file.name}</span>
+              <span style={{fontSize:'.85rem', color:'#7E90A8'}}>Click to change file</span>
+            </>
+          ) : (
+            <>
+              <span style={{fontSize:'1rem', fontWeight:600, color:'#C4D9EC'}}>Drop CSV file here or click to browse</span>
+              <span style={{fontSize:'.85rem', color:'#7E90A8'}}>Supports template-compatible CSV files</span>
+            </>
+          )}
         </label>
         <div className="actions-row">
           <button className="btn primary" disabled={!file||uploading} onClick={upload}>
-            {uploading? 'Uploading...' : '📤 Upload CSV'}
+            {uploading? '⏳ Uploading...' : '📤 Upload CSV'}
           </button>
           <a className="btn" href="/api/admin/download-template" target="_blank" rel="noreferrer">📥 Download Template</a>
         </div>
@@ -146,8 +156,8 @@ export default function CsvImportTab({id}:Props) {
         <h2>CSV Export</h2>
         <p>Export Admin Final Schedule data to CSV format.</p>
         <div className="import-box">
-          <div style={{marginBottom: '15px'}}>
-            <label style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px'}}>
+          <div className="radio-group">
+            <label className={`radio-option ${exportAll ? 'checked' : ''}`}>
               <input 
                 type="radio" 
                 checked={exportAll} 
@@ -155,7 +165,7 @@ export default function CsvImportTab({id}:Props) {
               />
               <span>Export All Months</span>
             </label>
-            <label style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <label className={`radio-option ${!exportAll ? 'checked' : ''}`}>
               <input 
                 type="radio" 
                 checked={!exportAll} 
@@ -167,16 +177,15 @@ export default function CsvImportTab({id}:Props) {
 
           {!exportAll && availableMonths.length > 0 && (
             <div style={{marginBottom: '15px'}}>
-              <div style={{fontSize: '0.9rem', marginBottom: '8px', fontWeight: 500}}>Select Months:</div>
-              <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+              <div style={{fontSize: '0.9rem', marginBottom: '12px', fontWeight: 600, color:'#B5CAE0'}}>Select Months:</div>
+              <div className="month-pills">
                 {availableMonths.map(month => (
                   <button
                     key={month}
                     onClick={() => toggleMonth(month)}
-                    className={`btn ${selectedMonths.includes(month) ? 'primary' : 'secondary'}`}
-                    style={{padding: '6px 12px', fontSize: '0.85rem'}}
+                    className={`month-pill ${selectedMonths.includes(month) ? 'selected' : ''}`}
                   >
-                    {selectedMonths.includes(month) ? '✓ ' : ''}{month}
+                    {month}
                   </button>
                 ))}
               </div>
