@@ -5,21 +5,21 @@
       "password": "password123",
       "role": "super_admin",
       "full_name": "Administrator",
-      "created_at": "2024-01-01T00:00:00.000Z"
+      "created_at": "2025-10-08T00:00:00.000Z"
     },
     {
       "username": "istiaque",
       "password": "cartup123",
-      "role": "admin",
-      "full_name": "Istiaque Rahman",
-      "created_at": "2024-01-01T00:00:00.000Z"
+      "role": "manager",
+      "full_name": "Istiaque Amin",
+      "created_at": "2025-10-08T00:00:00.000Z"
     },
     {
       "username": "abbas",
       "password": "voice2024",
       "role": "team_leader",
       "full_name": "Abbas Ebna Ahmad",
-      "created_at": "2024-01-15T00:00:00.000Z"
+      "created_at": "2025-10-08T00:00:00.000Z"
     }
   ]
 }
