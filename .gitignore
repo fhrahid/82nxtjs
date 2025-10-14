@@ -37,4 +37,5 @@ coverage
 # Backups
 backups
 *backup*.tsx
-*backup*.ts
+*backup*.tsnode_modules/
+.next/
