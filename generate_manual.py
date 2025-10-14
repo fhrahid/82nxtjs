@@ -11,6 +11,31 @@ from docx.enum.style import WD_STYLE_TYPE
 import os
 import glob
 
+def add_screenshot(doc, image_path, caption=''):
+    """Add a screenshot image to the document with optional caption"""
+    full_path = os.path.join(os.getcwd(), image_path)
+    if os.path.exists(full_path):
+        try:
+            # Add the image with a reasonable width (6 inches)
+            doc.add_picture(full_path, width=Inches(6.0))
+            # Center the image
+            last_paragraph = doc.paragraphs[-1]
+            last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            # Add caption if provided
+            if caption:
+                p = doc.add_paragraph(caption)
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                p.runs[0].font.size = Pt(10)
+                p.runs[0].font.italic = True
+                p.runs[0].font.color.rgb = RGBColor(128, 128, 128)
+            
+            doc.add_paragraph()  # Add spacing after image
+        except Exception as e:
+            doc.add_paragraph(f'📸 Screenshot: {image_path} (Image could not be loaded: {e})')
+    else:
+        doc.add_paragraph(f'📸 Screenshot: {image_path} (Image file not found)')
+
 def create_manual():
     """Create the comprehensive user manual document"""
     doc = Document()
@@ -200,7 +225,8 @@ def add_client_panel_sections(doc):
     for step in steps:
         doc.add_paragraph(step, style='List Number')
     
-    doc.add_paragraph('📸 Screenshot: See MANUAL_SCREENSHOTS/client/01_client_login_page.png')
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/01_client_login_page.png', 'Client Login Page')
     
     doc.add_paragraph()
     p = doc.add_paragraph()
@@ -228,7 +254,8 @@ def add_client_panel_sections(doc):
         p.add_run(f'{element}: ').bold = True
         p.add_run(description)
     
-    doc.add_paragraph('📸 Screenshot: See MANUAL_SCREENSHOTS/client/02_client_dashboard_main.png')
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/02_client_dashboard_main.png', 'Client Dashboard Overview')
     
     # 2.3 Refresh Function
     doc.add_heading('2.3 Refresh Function', 2)
@@ -248,7 +275,8 @@ def add_client_panel_sections(doc):
     for step in refresh_steps:
         doc.add_paragraph(step, style='List Number')
     
-    doc.add_paragraph('📸 Screenshot: See MANUAL_SCREENSHOTS/client/03_after_refresh.png')
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/03_after_refresh.png', 'Dashboard After Refresh')
     
     # 2.4 Theme Customization
     doc.add_heading('2.4 Theme Customization', 2)
@@ -283,9 +311,9 @@ def add_client_panel_sections(doc):
     for step in theme_steps:
         doc.add_paragraph(step, style='List Number')
     
-    doc.add_paragraph('📸 Screenshots:')
-    doc.add_paragraph('- Theme menu: MANUAL_SCREENSHOTS/client/04_theme_menu_open.png')
-    doc.add_paragraph('- Theme applied: MANUAL_SCREENSHOTS/client/05_theme_changed_ocean.png')
+    # Add screenshots
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/04_theme_menu_open.png', 'Theme Menu Dropdown')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/05_theme_changed_ocean.png', 'Medium Ocean Theme Applied')
     
     # 2.5 Calendar Feature
     doc.add_heading('2.5 Calendar Feature', 2)
@@ -306,10 +334,10 @@ def add_client_panel_sections(doc):
     for step in calendar_steps:
         doc.add_paragraph(step, style='List Number')
     
-    doc.add_paragraph('📸 Screenshots:')
-    doc.add_paragraph('- Calendar opened: MANUAL_SCREENSHOTS/client/06_calendar_opened.png')
-    doc.add_paragraph('- October view: MANUAL_SCREENSHOTS/client/07_calendar_october.png')
-    doc.add_paragraph('- Date selected: MANUAL_SCREENSHOTS/client/08_date_selected_oct20.png')
+    # Add screenshots
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/06_calendar_opened.png', 'Calendar Expanded (September)')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/07_calendar_october.png', 'Calendar Showing October')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/08_date_selected_oct20.png', 'Date Selected (October 20)')
     
     # Continue with other client sections...
     add_shift_change_section(doc)
@@ -344,7 +372,8 @@ def add_shift_change_section(doc):
     for i, step in enumerate(steps, 1):
         doc.add_paragraph(f'{i}. {step}')
     
-    doc.add_paragraph('📸 Screenshot: See MANUAL_SCREENSHOTS/client/09_shift_change_modal_opened.png')
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/09_shift_change_modal_opened.png', 'Shift Change Request Modal')
     
     doc.add_paragraph()
     p = doc.add_paragraph()
@@ -466,6 +495,9 @@ def add_stat_cards_section(doc):
     doc.add_paragraph('2. The card will show detailed information')
     doc.add_paragraph('3. Click the "▲" arrow or anywhere outside to collapse')
     
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/client/10_stat_card_upcoming_days_expanded.png', 'Upcoming Days Stat Card Expanded')
+    
     doc.add_paragraph()
     p = doc.add_paragraph()
     p.add_run('Tip: ').bold = True
@@ -513,6 +545,9 @@ def add_admin_panel_sections(doc):
     for i, step in enumerate(steps, 1):
         doc.add_paragraph(f'{i}. {step}')
     
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/01_admin_login_page.png', 'Admin Login Page')
+    
     # Continue with other admin sections...
     add_admin_dashboard_section(doc)
     add_schedule_requests_section(doc)
@@ -553,6 +588,12 @@ def add_admin_dashboard_section(doc):
         p.add_run(f'{title}: ').bold = True
         p.add_run(description)
     
+    # Add screenshots
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/02_admin_dashboard.png', 'Admin Dashboard Overview')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/03_dashboard_overview.png', 'Dashboard with All Stat Cards')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/04_employees_working_today_modal.png', 'Employees Working Today Modal')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/05_team_health_expanded.png', 'Team Health Overview Expanded')
+    
     doc.add_paragraph()
     p = doc.add_paragraph()
     p.add_run('How to use: ').bold = True
@@ -587,6 +628,10 @@ def add_schedule_requests_section(doc):
     ]
     for step in steps:
         doc.add_paragraph(step, style='List Number')
+    
+    # Add screenshots
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/06_schedule_requests_all.png', 'Schedule Requests - All View')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/07_schedule_requests_pending.png', 'Schedule Requests - Pending Filter')
     
     doc.add_paragraph()
     p = doc.add_paragraph()
@@ -630,6 +675,9 @@ def add_data_sync_section(doc):
     ]
     for i, step in enumerate(steps, 1):
         doc.add_paragraph(f'{i}. {step}')
+    
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/08_data_sync_tab.png', 'Data Sync Tab')
 
 def add_google_sheets_section(doc):
     """Add Google Sheets configuration documentation"""
@@ -665,6 +713,9 @@ def add_google_sheets_section(doc):
     doc.add_paragraph('3. Select "Comma-separated values (.csv)"')
     doc.add_paragraph('4. Click "Publish"')
     doc.add_paragraph('5. Copy the generated URL')
+    
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/09_google_sheets_tab.png', 'Google Sheets Configuration Tab')
 
 def add_roster_data_section(doc):
     """Add roster data management documentation"""
@@ -710,6 +761,11 @@ def add_roster_data_section(doc):
     ]
     for i, step in enumerate(steps, 1):
         doc.add_paragraph(f'{i}. {step}')
+    
+    # Add screenshots
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/10_roster_data_tab.png', 'Roster Data Tab with Calendar')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/11_roster_date_selected_oct15.png', 'Roster for October 15 with All Employees')
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/12_roster_shift_edit_modal.png', 'Shift Edit Modal with Options')
 
 def add_csv_section(doc):
     """Add CSV import/export documentation"""
@@ -742,6 +798,9 @@ def add_csv_section(doc):
     ]
     for i, step in enumerate(steps, 1):
         doc.add_paragraph(f'{i}. {step}')
+    
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/13_csv_import_tab.png', 'CSV Import/Export Tab')
     
     doc.add_paragraph()
     p = doc.add_paragraph()
@@ -777,6 +836,9 @@ def add_profile_section(doc):
     ]
     for i, step in enumerate(steps, 1):
         doc.add_paragraph(f'{i}. {step}')
+    
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/14_my_profile_tab.png', 'My Profile Tab')
 
 def add_team_mgmt_section(doc):
     """Add team management documentation"""
@@ -819,6 +881,9 @@ def add_team_mgmt_section(doc):
     doc.add_paragraph('2. Click "Edit" next to their name')
     doc.add_paragraph('3. Update the information')
     doc.add_paragraph('4. Click "Save Changes"')
+    
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/15_team_management_tab.png', 'Team Management Tab')
 
 def add_user_mgmt_section(doc):
     """Add user management documentation"""
@@ -860,6 +925,9 @@ def add_user_mgmt_section(doc):
     doc.add_paragraph('2. Click the "Delete" button')
     doc.add_paragraph('3. Confirm the deletion')
     doc.add_paragraph('4. The user account will be permanently removed')
+    
+    # Add screenshot
+    add_screenshot(doc, 'MANUAL_SCREENSHOTS/admin/16_user_management_tab.png', 'User Management Tab')
 
 def add_api_documentation(doc):
     """Add comprehensive API documentation"""
