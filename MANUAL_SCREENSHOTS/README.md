@@ -38,6 +38,26 @@ MANUAL_SCREENSHOTS/
 ### Authentication & Dashboard
 1. **01_admin_login_page.png** - Admin login interface with username/password fields
 2. **02_admin_dashboard.png** - Admin dashboard showing statistics, team health, and activity log
+3. **03_dashboard_overview.png** - Full dashboard overview with all stat cards visible
+4. **04_employees_working_today_modal.png** - Modal showing all 32 employees working today with their shifts
+5. **05_team_health_expanded.png** - Team Health Overview expanded showing all teams with metrics
+
+### Schedule Management
+6. **06_schedule_requests_all.png** - Schedule Requests tab showing all requests view
+7. **07_schedule_requests_pending.png** - Schedule Requests tab filtered to pending requests
+
+### Data Management
+8. **08_data_sync_tab.png** - Data Sync tab with sync controls and statistics
+9. **09_google_sheets_tab.png** - Google Sheets configuration tab with links management
+10. **10_roster_data_tab.png** - Roster Data tab with calendar and filters
+11. **11_roster_date_selected_oct15.png** - Roster showing all employees for October 15
+12. **12_roster_shift_edit_modal.png** - Shift edit modal with dropdown showing all shift options
+
+### Import/Export & User Management
+13. **13_csv_import_tab.png** - CSV Import/Export tab with upload and download options
+14. **14_my_profile_tab.png** - My Profile tab showing user information and password change
+15. **15_team_management_tab.png** - Team Management tab with teams list and employee management
+16. **16_user_management_tab.png** - User Management tab showing admin users with role-based access
 
 ## 🎯 Screenshot Coverage
 
@@ -123,5 +143,5 @@ For questions about these screenshots or the documentation:
 ---
 
 **Last Updated**: October 14, 2025
-**Screenshot Count**: 12 total (10 client + 2 admin)
-**Status**: ✅ Core features documented, additional screenshots can be added as needed
+**Screenshot Count**: 26 total (10 client + 16 admin)
+**Status**: ✅ Comprehensive documentation complete with all admin panel features captured
