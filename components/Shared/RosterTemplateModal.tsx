@@ -18,6 +18,12 @@ interface Props {
   onSave: (updatedSchedule: Record<string, string[]>) => Promise<void>;
   onAddEmployee?: (name: string, id: string, team: string) => Promise<void>;
   onChangeTeam?: (employeeId: string, newTeam: string) => Promise<void>;
+  existingTemplate?: {
+    schedule: Record<string, string[]>;
+    employees: Employee[];
+    monthYear: string;
+    fileName: string;
+  } | null;
 }
 
 const SHIFT_OPTIONS = ['M2', 'M3', 'M4', 'D1', 'D2', 'DO', 'SL', 'CL', 'EL', 'HL'];
@@ -30,7 +36,7 @@ const DATE_COL_W = 120;
 type EditingCell = { empId: string; dateIdx: number } | null;
 type PopPos = { top: number; left: number; placement: 'above'|'below' } | null;
 
-export default function RosterTemplateModal({ open, onClose, employees, onSave, onAddEmployee, onChangeTeam }: Props) {
+export default function RosterTemplateModal({ open, onClose, employees, onSave, onAddEmployee, onChangeTeam, existingTemplate }: Props) {
   // States
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [monthOffset, setMonthOffset] = useState(1);
@@ -90,6 +96,27 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
       return next;
     });
   }, [allEmployees]);
+
+  // Load existing template data when provided
+  useEffect(() => {
+    if (existingTemplate && open) {
+      // Load the schedule from existing template
+      setSchedule(existingTemplate.schedule);
+      
+      // Parse month/year from filename (e.g., "November-2025")
+      const [monthName, year] = existingTemplate.monthYear.split('-');
+      if (monthName && year) {
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const monthIndex = monthNames.findIndex(m => m === monthName);
+        if (monthIndex !== -1) {
+          const now = new Date();
+          const targetDate = new Date(parseInt(year), monthIndex, 1);
+          const monthsDiff = (targetDate.getFullYear() - now.getFullYear()) * 12 + (targetDate.getMonth() - now.getMonth());
+          setMonthOffset(monthsDiff + 1); // +1 because offset 1 means next month
+        }
+      }
+    }
+  }, [existingTemplate, open]);
 
   const selectAllTeams = () => setSelectedTeams(teamNames);
   const clearAllTeams = () => setSelectedTeams([]);
@@ -318,12 +345,14 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
   if (!open) return null;
 
   const legendItems = SHIFT_OPTIONS.map(code => ({ code, label: SHIFT_MAP[code] || code }));
+  const isEditing = !!existingTemplate;
+  const modalTitle = isEditing ? `Edit Template: ${existingTemplate?.monthYear}` : 'Roster Template';
 
   // Bottom bar height used to pad the scroller so rows never hide under it
   const BOTTOM_BAR_H = 140;
 
   return (
-    <Modal open={open} onClose={onClose} title="Roster Template" width="95vw">
+    <Modal open={open} onClose={onClose} title={modalTitle} width="95vw">
       <div className="rtm-modal-root" style={{'--rtm-bottom-pad': `${BOTTOM_BAR_H + 12}px`} as React.CSSProperties}>
         <p className="rtm-intro">
           Create roster schedules for future months. Click on any cell to assign a shift.

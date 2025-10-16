@@ -32,6 +32,9 @@ export async function POST(req: Request) {
       });
     });
 
+    // Collect all date headers from templates
+    const allDateHeaders = new Set<string>();
+
     // Process each template file
     for (const fileName of templateFiles) {
       const filePath = path.join(ROSTER_TEMPLATES_DIR, fileName);
@@ -44,10 +47,17 @@ export async function POST(req: Request) {
           trim: true
         });
 
+        if (records.length === 0) continue;
+
+        // Get date headers from CSV (exclude Team, Name, ID)
+        const headers = Object.keys(records[0]);
+        const dateHeaders = headers.filter(h => !['Team', 'Name', 'ID'].includes(h));
+        dateHeaders.forEach(h => allDateHeaders.add(h));
+
         // Process each employee in the template
         for (const record of records) {
-          const empId = record['Employee ID'];
-          const empName = record['Employee Name'];
+          const empId = record['ID'];
+          const empName = record['Name'];
           const team = record['Team'];
 
           if (!empId) continue;
@@ -59,29 +69,28 @@ export async function POST(req: Request) {
               id: empId,
               name: empName || empId,
               team: team || 'Unassigned',
+              currentTeam: team || 'Unassigned',
               schedule: []
             };
             employeeMap.set(empId, employee);
           } else {
             // Update name and team if provided in template
             if (empName) employee.name = empName;
-            if (team) employee.team = team;
-          }
-
-          // Merge schedule data (Day1, Day2, ... Day90)
-          for (let i = 1; i <= 90; i++) {
-            const dayKey = `Day${i}`;
-            const shift = record[dayKey];
-            
-            if (shift) {
-              // Ensure schedule array is long enough
-              while (employee.schedule.length < i) {
-                employee.schedule.push('');
-              }
-              // Only update if there's a shift value in the template
-              employee.schedule[i - 1] = shift;
+            if (team) {
+              employee.team = team;
+              employee.currentTeam = team;
             }
           }
+
+          // Update schedule with template data
+          dateHeaders.forEach(dateHeader => {
+            const shift = record[dateHeader];
+            if (shift) {
+              // Store the shift with the date header as key
+              if (!employee.templateShifts) employee.templateShifts = {};
+              employee.templateShifts[dateHeader] = shift;
+            }
+          });
         }
       } catch (e) {
         console.error(`Error processing template ${fileName}:`, e);
@@ -89,8 +98,52 @@ export async function POST(req: Request) {
       }
     }
 
-    // Rebuild admin data structure
-    const allEmployees = Array.from(employeeMap.values());
+    // Convert date headers to sorted array
+    const sortedDateHeaders = Array.from(allDateHeaders).sort((a, b) => {
+      // Extract day number and month for comparison
+      const getDateValue = (header: string) => {
+        const match = header.match(/^(\d+)([A-Za-z]+)$/);
+        if (!match) return 0;
+        const day = parseInt(match[1]);
+        const month = match[2];
+        const monthMap: Record<string, number> = {
+          'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+          'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+        };
+        return (monthMap[month] || 0) * 100 + day;
+      };
+      return getDateValue(a) - getDateValue(b);
+    });
+
+    // Update admin data headers to include all date headers
+    // Remove duplicate headers and merge with existing
+    const existingHeaderSet = new Set(adminData.headers || []);
+    sortedDateHeaders.forEach(h => {
+      if (!existingHeaderSet.has(h)) {
+        adminData.headers.push(h);
+      }
+    });
+
+    // Rebuild employee schedules to match the headers
+    const allEmployees = Array.from(employeeMap.values()).map(emp => {
+      const schedule: string[] = [];
+      adminData.headers.forEach((header: string) => {
+        if (emp.templateShifts && emp.templateShifts[header]) {
+          schedule.push(emp.templateShifts[header]);
+        } else if (emp.schedule && emp.schedule[adminData.headers.indexOf(header)]) {
+          schedule.push(emp.schedule[adminData.headers.indexOf(header)]);
+        } else {
+          schedule.push('');
+        }
+      });
+      return {
+        id: emp.id,
+        name: emp.name,
+        team: emp.team,
+        currentTeam: emp.currentTeam || emp.team,
+        schedule
+      };
+    });
     
     // Rebuild teams
     const teams: Record<string, any[]> = {};
@@ -99,22 +152,6 @@ export async function POST(req: Request) {
       if (!teams[teamName]) teams[teamName] = [];
       teams[teamName].push(emp);
     });
-
-    // Generate headers if not present (90 days from today)
-    if (!adminData.headers || adminData.headers.length === 0) {
-      const headers: string[] = [];
-      const today = new Date();
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      for (let i = 0; i < 90; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() + i);
-        const day = date.getDate();
-        const month = monthNames[date.getMonth()];
-        headers.push(`${day} ${month}`);
-      }
-      adminData.headers = headers;
-    }
 
     // Update admin data
     adminData.allEmployees = allEmployees;
