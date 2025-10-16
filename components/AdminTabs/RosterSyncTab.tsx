@@ -115,6 +115,28 @@ export default function RosterSyncTab({id}: Props) {
     }
   }
 
+  async function reloadData() {
+    setLoading(true);
+    setSyncMessage({text: 'Reloading data from disk...', type: 'success'});
+    try {
+      const res = await fetch('/api/admin/reload-data', {method: 'POST'}).then(r => r.json());
+      setSyncMessage({
+        text: res.success ? res.message : res.error,
+        type: res.success ? 'success' : 'error'
+      });
+      if (res.success) {
+        load(); // Refresh UI
+      }
+    } catch (e) {
+      console.error('Failed to reload data:', e);
+      setSyncMessage({
+        text: 'Failed to reload data',
+        type: 'error'
+      });
+    }
+    setLoading(false);
+  }
+
   async function loadLinks() {
     setLinksLoading(true);
     const res = await fetch('/api/admin/get-google-links');
@@ -342,6 +364,15 @@ export default function RosterSyncTab({id}: Props) {
             className={`btn ${autoSyncEnabled ? 'success' : 'secondary'}`}
           >
             {autoSyncEnabled ? '✓ Auto-Sync Enabled (5 min)' : '⏱ Enable Auto-Sync (5 min)'}
+          </button>
+          <button
+            onClick={reloadData}
+            disabled={loading}
+            className="btn"
+            style={{backgroundColor: '#FF5722', color: 'white'}}
+            title="Reload data from disk into memory"
+          >
+            {loading ? '⏳ Reloading...' : '🔄 Reload Data'}
           </button>
           <button
             onClick={() => setShowRosterTemplate(true)}

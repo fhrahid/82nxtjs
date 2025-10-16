@@ -13,7 +13,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'No template files selected' }, { status: 400 });
     }
 
-    // Read current admin data
+    // Reload all data from disk to ensure we have the latest state
+    // This is important if files were manually updated
+    loadAll();
+
+    // Read current admin data from disk
     let adminData: any = { allEmployees: [], teams: {}, headers: [] };
     try {
       const adminDataContent = await fs.readFile(ADMIN_DATA_FILE, 'utf-8');
