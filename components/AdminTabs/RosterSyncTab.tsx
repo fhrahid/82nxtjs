@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
+import RosterTemplateModal from '../Shared/RosterTemplateModal';
 
 interface Props { id: string; }
 
@@ -24,6 +25,11 @@ export default function RosterSyncTab({id}: Props) {
   const [resetting, setResetting] = useState(false);
   const [hardResetting, setHardResetting] = useState(false);
 
+  // Roster Template states
+  const [showRosterTemplate, setShowRosterTemplate] = useState(false);
+  const [templateData, setTemplateData] = useState<any>(null);
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+
   const load = useCallback(async function() {
     setLoading(true);
     try {
@@ -43,6 +49,7 @@ export default function RosterSyncTab({id}: Props) {
       setGoogleStatus(g?.allEmployees?.length ? `${g.allEmployees.length} employees loaded` : 'Not loaded');
       setAdminStatus(a?.allEmployees?.length ? `${a.allEmployees.length} employees` : 'Not available');
       setAutoSyncEnabled(settings.autoSyncEnabled || false);
+      setAllEmployees(disp.allEmployees || []);
     } catch (e: any) {
       console.error(e);
     }
@@ -151,7 +158,7 @@ export default function RosterSyncTab({id}: Props) {
   }
 
   async function hardReset() {
-    if (!confirm('⚠️ WARNING: This will permanently delete all roster data including admin_data.json, google_data.json, modified_shifts.json, and schedule_requests.json. Are you sure?')) {
+    if (!confirm('⚠️ WARNING: This will permanently delete ALL schedule data including:\n\n• Admin modified roster data\n• Google Sheets imported data\n• Shift modification history\n• All schedule requests\n\nAre you sure?')) {
       return;
     }
     if (!confirm('This action cannot be undone. Are you absolutely sure you want to proceed?')) {
@@ -163,17 +170,28 @@ export default function RosterSyncTab({id}: Props) {
       const res = await fetch('/api/admin/hard-reset', {method: 'POST'}).then(r => r.json());
       if (res.success) {
         alert(res.message);
-        setSyncMessage({text: 'Data has been reset. Please refresh the page.', type: 'success'});
-        load();
-        loadLinks();
+        setSyncMessage({text: 'Data has been reset. Refreshing...', type: 'success'});
+        // Force a hard refresh after deletion
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         alert(res.error || 'Reset failed');
+        setHardResetting(false);
       }
     } catch (e) {
       alert('Reset failed');
       console.error(e);
+      setHardResetting(false);
     }
-    setHardResetting(false);
+  }
+
+  async function handleSaveRosterTemplate(schedule: Record<string, string[]>) {
+    // This would be implemented to save to a separate template storage
+    // For now, we'll just log it
+    console.log('Saving roster template:', schedule);
+    // TODO: Implement API endpoint to save roster template
+    return Promise.resolve();
   }
 
   useEffect(() => {
@@ -219,6 +237,13 @@ export default function RosterSyncTab({id}: Props) {
             className={`btn ${autoSyncEnabled ? 'success' : 'secondary'}`}
           >
             {autoSyncEnabled ? '✓ Auto-Sync Enabled (5 min)' : '⏱ Enable Auto-Sync (5 min)'}
+          </button>
+          <button
+            onClick={() => setShowRosterTemplate(true)}
+            className="btn"
+            style={{backgroundColor: '#9C27B0', color: 'white'}}
+          >
+            📋 Roster Template
           </button>
         </div>
         {syncMessage.text && (
@@ -344,10 +369,10 @@ export default function RosterSyncTab({id}: Props) {
             This will permanently delete ALL schedule data including:
           </p>
           <ul style={{marginBottom: '12px', marginLeft: '20px', color: 'var(--theme-text-dim, #9FB7D5)'}}>
-            <li><code>admin_data.json</code> - Admin modified roster data</li>
-            <li><code>google_data.json</code> - Google Sheets imported data</li>
-            <li><code>modified_shifts.json</code> - Shift modification history</li>
-            <li><code>schedule_requests.json</code> - All schedule requests</li>
+            <li>Admin modified roster data</li>
+            <li>Google Sheets imported data</li>
+            <li>Shift modification history</li>
+            <li>All schedule requests</li>
           </ul>
           <div className="import-box" style={{borderColor: '#ff6b6b', marginTop: '10px'}}>
             <button
@@ -361,6 +386,14 @@ export default function RosterSyncTab({id}: Props) {
           </div>
         </div>
       </div>
+
+      {/* Roster Template Modal */}
+      <RosterTemplateModal
+        open={showRosterTemplate}
+        onClose={() => setShowRosterTemplate(false)}
+        employees={allEmployees}
+        onSave={handleSaveRosterTemplate}
+      />
     </div>
   );
 }
