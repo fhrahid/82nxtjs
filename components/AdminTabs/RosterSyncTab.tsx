@@ -628,11 +628,11 @@ export default function RosterSyncTab({id}: Props) {
       <div style={{marginBottom: '40px'}}>
         <h3 style={{fontSize: '1.3rem', marginBottom: '15px', color: 'var(--theme-primary, #5A9FD4)'}}>↺ Reset Operations</h3>
         
-        {/* Reset to Google/CSV */}
+        {/* Reset to CSV Data */}
         <div style={{marginBottom: '25px'}}>
-          <h4 style={{fontSize: '1.1rem', marginBottom: '10px'}}>Reset to Google/CSV Data</h4>
+          <h4 style={{fontSize: '1.1rem', marginBottom: '10px'}}>Reset to CSV Data</h4>
           <p style={{marginBottom: '12px', color: 'var(--theme-text-dim, #9FB7D5)'}}>
-            Reset admin roster data to match the original Google Sheets or CSV data. This will remove all manual shift modifications.
+            Reset admin roster data to the CSV or template data. This will remove all manual shift modifications and schedule requests.
           </p>
           <button
             className="btn"
@@ -640,7 +640,7 @@ export default function RosterSyncTab({id}: Props) {
             onClick={resetToGoogleOrCSV}
             disabled={loading || syncing || resetting}
           >
-            {resetting ? 'Resetting…' : '↺ Reset to Google/CSV'}
+            {resetting ? 'Resetting…' : '↺ Reset to CSV Data'}
           </button>
         </div>
 
