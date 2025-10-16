@@ -6,6 +6,7 @@ export const GOOGLE_LINKS_FILE = `${DATA_DIR}/google_links.json`;
 export const SCHEDULE_REQUESTS_FILE = `${DATA_DIR}/schedule_requests.json`;
 export const ADMIN_USERS_FILE = `${DATA_DIR}/admin_users.json`;
 export const SETTINGS_FILE = `${DATA_DIR}/settings.json`;
+export const ROSTER_TEMPLATES_DIR = `${DATA_DIR}/roster_templates`;
 
 export const SHIFT_MAP: Record<string,string> = {
   M2:"8 AM – 5 PM",

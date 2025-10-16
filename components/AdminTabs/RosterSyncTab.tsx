@@ -29,6 +29,12 @@ export default function RosterSyncTab({id}: Props) {
   const [showRosterTemplate, setShowRosterTemplate] = useState(false);
   const [templateData, setTemplateData] = useState<any>(null);
   const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  
+  // Template Sync states
+  const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+  const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [syncingTemplates, setSyncingTemplates] = useState(false);
 
   const load = useCallback(async function() {
     setLoading(true);
@@ -187,16 +193,67 @@ export default function RosterSyncTab({id}: Props) {
   }
 
   async function handleSaveRosterTemplate(schedule: Record<string, string[]>) {
-    // This would be implemented to save to a separate template storage
-    // For now, we'll just log it
-    console.log('Saving roster template:', schedule);
-    // TODO: Implement API endpoint to save roster template
+    // The actual save is now handled in RosterTemplateModal itself
+    // This is just a placeholder for parent notification
     return Promise.resolve();
+  }
+
+  async function loadTemplates() {
+    try {
+      const res = await fetch('/api/admin/list-roster-templates');
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableTemplates(data.templates || []);
+      }
+    } catch (e) {
+      console.error('Failed to load templates:', e);
+    }
+  }
+
+  async function syncSelectedTemplates() {
+    if (selectedTemplates.length === 0) {
+      alert('Please select at least one template to sync');
+      return;
+    }
+
+    if (!confirm(`Sync ${selectedTemplates.length} template(s)? This will update the roster data with template schedules.`)) {
+      return;
+    }
+
+    setSyncingTemplates(true);
+    try {
+      const res = await fetch('/api/admin/sync-roster-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateFiles: selectedTemplates })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert(result.message);
+        setSelectedTemplates([]);
+        setShowTemplateSelector(false);
+        load(); // Reload data
+      } else {
+        alert(`Sync failed: ${result.error}`);
+      }
+    } catch (e) {
+      console.error('Failed to sync templates:', e);
+      alert('Failed to sync templates');
+    }
+    setSyncingTemplates(false);
+  }
+
+  function toggleTemplateSelection(fileName: string) {
+    setSelectedTemplates(prev =>
+      prev.includes(fileName) ? prev.filter(f => f !== fileName) : [...prev, fileName]
+    );
   }
 
   useEffect(() => {
     load();
     loadLinks();
+    loadTemplates();
   }, [load]);
 
   // Auto-sync every 5 minutes if enabled
@@ -245,6 +302,13 @@ export default function RosterSyncTab({id}: Props) {
           >
             📋 Roster Template
           </button>
+          <button
+            onClick={() => { loadTemplates(); setShowTemplateSelector(!showTemplateSelector); }}
+            className="btn"
+            style={{backgroundColor: '#673AB7', color: 'white'}}
+          >
+            📁 Sync From Templates
+          </button>
         </div>
         {syncMessage.text && (
           <div style={{
@@ -258,6 +322,79 @@ export default function RosterSyncTab({id}: Props) {
             fontWeight: 500
           }}>
             {syncMessage.type === 'success' ? '✓' : '✗'} {syncMessage.text}
+          </div>
+        )}
+        
+        {/* Template Selector */}
+        {showTemplateSelector && (
+          <div style={{
+            marginTop: '16px',
+            padding: '16px',
+            background: 'var(--theme-card-bg)',
+            border: '2px solid #673AB7',
+            borderRadius: '10px'
+          }}>
+            <h4 style={{marginTop: 0, marginBottom: '12px', color: '#9575CD'}}>📁 Select Templates to Sync</h4>
+            {availableTemplates.length === 0 ? (
+              <p style={{color: 'var(--theme-text-dim)', fontStyle: 'italic'}}>
+                No saved templates found. Create a template using the &quot;Roster Template&quot; button above.
+              </p>
+            ) : (
+              <>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px'}}>
+                  {availableTemplates.map(template => (
+                    <label
+                      key={template.fileName}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        background: selectedTemplates.includes(template.fileName) ? 'rgba(103, 58, 183, 0.2)' : 'var(--theme-bg)',
+                        border: `1px solid ${selectedTemplates.includes(template.fileName) ? '#9575CD' : 'var(--theme-border)'}`,
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedTemplates.includes(template.fileName)}
+                        onChange={() => toggleTemplateSelection(template.fileName)}
+                        style={{cursor: 'pointer'}}
+                      />
+                      <div style={{flex: 1}}>
+                        <div style={{fontWeight: 600, color: 'var(--theme-text)'}}>
+                          {template.monthYear}
+                        </div>
+                        <div style={{fontSize: '0.85rem', color: 'var(--theme-text-dim)'}}>
+                          Modified: {new Date(template.modifiedAt).toLocaleDateString()} • {(template.size / 1024).toFixed(1)} KB
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div style={{display: 'flex', gap: '10px', justifyContent: 'flex-end'}}>
+                  <button
+                    className="btn"
+                    onClick={() => setShowTemplateSelector(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn primary"
+                    onClick={syncSelectedTemplates}
+                    disabled={selectedTemplates.length === 0 || syncingTemplates}
+                    style={{
+                      backgroundColor: selectedTemplates.length === 0 ? '#555' : '#673AB7',
+                      opacity: selectedTemplates.length === 0 ? 0.5 : 1
+                    }}
+                  >
+                    {syncingTemplates ? '⏳ Syncing...' : `🔄 Sync ${selectedTemplates.length} Template(s)`}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
         {lastSyncTime && (
