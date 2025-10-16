@@ -18,6 +18,14 @@ interface Props {
   onSave: (updatedSchedule: Record<string, string[]>) => Promise<void>;
   onAddEmployee?: (name: string, id: string, team: string) => Promise<void>;
   onChangeTeam?: (employeeId: string, newTeam: string) => Promise<void>;
+  templateData?: {
+    monthYear: string;
+    monthName: string;
+    year: number;
+    monthOffset: number;
+    employees: Employee[];
+    schedule: Record<string, string[]>;
+  } | null;
 }
 
 const SHIFT_OPTIONS = ['M2', 'M3', 'M4', 'D1', 'D2', 'DO', 'SL', 'CL', 'EL', 'HL'];
@@ -30,7 +38,7 @@ const DATE_COL_W = 120;
 type EditingCell = { empId: string; dateIdx: number } | null;
 type PopPos = { top: number; left: number; placement: 'above'|'below' } | null;
 
-export default function RosterTemplateModal({ open, onClose, employees, onSave, onAddEmployee, onChangeTeam }: Props) {
+export default function RosterTemplateModal({ open, onClose, employees, onSave, onAddEmployee, onChangeTeam, templateData }: Props) {
   // States
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [monthOffset, setMonthOffset] = useState(1);
@@ -90,6 +98,20 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
       return next;
     });
   }, [allEmployees]);
+
+  // Load template data when editing
+  useEffect(() => {
+    if (!templateData) return;
+    
+    // Set month offset based on template data
+    setMonthOffset(templateData.monthOffset);
+    
+    // Load template employees as local adds
+    setLocalAdds(templateData.employees);
+    
+    // Load template schedule
+    setSchedule(templateData.schedule);
+  }, [templateData]);
 
   const selectAllTeams = () => setSelectedTeams(teamNames);
   const clearAllTeams = () => setSelectedTeams([]);
@@ -248,9 +270,15 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
       
       if (result.success) {
         alert(`Template saved successfully as ${result.fileName}!`);
+        // Reset the schedule table after successful save
+        const emptySchedule: Record<string, string[]> = {};
+        allEmployees.forEach(emp => {
+          emptySchedule[emp.id] = Array(90).fill('');
+        });
+        setSchedule(emptySchedule);
+        
         // Also call the parent onSave if provided
         await onSave(schedule);
-        onClose();
       } else {
         alert(`Failed to save template: ${result.error}`);
       }
