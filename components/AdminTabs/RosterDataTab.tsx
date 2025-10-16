@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import MonthCompactCalendar from '../Shared/MonthCompactCalendar';
 import GoogleSheetsRosterModal from '../Shared/GoogleSheetsRosterModal';
+import AdminRosterDataModal from '../Shared/AdminRosterDataModal';
 import { SHIFT_MAP } from '@/lib/constants';
 
 interface Props { id: string; }
@@ -11,7 +12,6 @@ export default function RosterDataTab({id}:Props) {
   const [googleData,setGoogleData]=useState<any>(null);
   const [loading,setLoading]=useState(false);
   const [saving,setSaving]=useState(false);
-  const [resetting,setResetting]=useState(false);
   
   // Shift view states (inline, not modal)
   const [selectedDate, setSelectedDate] = useState('');
@@ -24,6 +24,9 @@ export default function RosterDataTab({id}:Props) {
   
   // Google Sheets Roster Modal state
   const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
+  
+  // Admin Roster Data Modal state
+  const [showAdminRosterModal, setShowAdminRosterModal] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -152,18 +155,7 @@ export default function RosterDataTab({id}:Props) {
     }
   }
 
-  async function resetToGoogleOrCSV() {
-    if (!confirm('Reset admin data to Google spreadsheet or CSV data? This will remove all manual overrides.')) return;
-    setResetting(true);
-    const res = await fetch('/api/admin/reset-to-google',{method:'POST'}).then(r=>r.json());
-    setResetting(false);
-    if (!res.success) {
-      alert(res.error||'Reset failed');
-    } else {
-      alert('Admin data reset successfully!');
-      load();
-    }
-  }
+
 
   return (
     <div id={id} className="roster-data-root">
@@ -185,11 +177,11 @@ export default function RosterDataTab({id}:Props) {
             📊 Google Sheets Roster
           </button>
           <button 
-            className="rd-btn reset" 
-            onClick={resetToGoogleOrCSV} 
-            disabled={loading || saving || resetting || !googleData}
+            className="rd-btn admin-roster" 
+            onClick={() => setShowAdminRosterModal(true)} 
+            disabled={loading || !adminData}
           >
-            {resetting ? 'Resetting…' : '↺ Reset to Google/CSV'}
+            ✏️ Admin Roster Data
           </button>
         </div>
       </div>
@@ -390,6 +382,30 @@ export default function RosterDataTab({id}:Props) {
           onClose={() => setShowGoogleSheetsModal(false)}
           headers={googleData.headers || []}
           teams={googleData.teams || {}}
+        />
+      )}
+
+      {/* Admin Roster Data Modal */}
+      {adminData && (
+        <AdminRosterDataModal
+          open={showAdminRosterModal}
+          onClose={() => {
+            setShowAdminRosterModal(false);
+            load(); // Reload data when modal closes
+          }}
+          headers={adminData.headers || []}
+          teams={adminData.teams || {}}
+          onUpdateShift={async (employeeId, dateIndex, newShift) => {
+            const original = findGoogleShift(employeeId, dateIndex);
+            const res = await fetch('/api/admin/update-shift',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({employeeId, dateIndex, newShift, googleShift:original})
+            }).then(r=>r.json());
+            if (!res.success) {
+              throw new Error(res.error || 'Update failed');
+            }
+          }}
         />
       )}
 

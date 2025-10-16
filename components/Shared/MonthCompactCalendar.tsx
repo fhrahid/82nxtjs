@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 interface Props {
   headers: string[];
@@ -54,6 +54,30 @@ export default function MonthCompactCalendar({
   showNavigation = false
 }: Props) {
   const [monthOffset, setMonthOffset] = useState(0);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
+
+  // Auto-select today's date on first render
+  useEffect(() => {
+    if (!hasAutoSelected && headers.length > 0 && !selectedDate && onSelect) {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const day = now.getDate();
+      const monthName = MONTH_NAME[currentMonth];
+      const todayHeader = `${day}${monthName}`;
+      
+      // Check if today's header exists in the headers array
+      if (headers.includes(todayHeader)) {
+        onSelect(todayHeader);
+        setHasAutoSelected(true);
+        // Set month offset to show current month
+        const det = detectMonth(headers);
+        if (det && det.monthIndex !== currentMonth) {
+          // Calculate offset to show current month
+          setMonthOffset(currentMonth - det.monthIndex);
+        }
+      }
+    }
+  }, [headers, selectedDate, onSelect, hasAutoSelected]);
 
   const { weeks, monthName, monthIndex, year, canGoPrev, canGoNext } = useMemo(()=>{
     const det = detectMonth(headers);
