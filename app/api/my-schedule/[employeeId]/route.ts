@@ -51,10 +51,19 @@ export async function GET(_: NextRequest, { params }:{params:{employeeId:string}
     }
   }
 
-  // time off next 30
+  // time off next 30 days (current month only)
   const planned: any[] = [];
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
   for (let i=0;i<30;i++) {
     const d = new Date(Date.now()+i*86400000);
+    
+    // Only include dates from current month
+    if (d.getMonth() !== currentMonth || d.getFullYear() !== currentYear) {
+      continue;
+    }
+    
     const lbl = formatDateHeader(d);
     const actual = headers.find(h=>h===lbl) || headers.find(h=>h.includes(lbl));
     if (actual) {
@@ -76,23 +85,40 @@ export async function GET(_: NextRequest, { params }:{params:{employeeId:string}
     }
   }
 
-  // shift changes (compare google)
+  // shift changes (compare google) - current month only
   const googleRef = findEmployeeInGoogle(employeeId);
   const changes:any[] = [];
+  
   if (googleRef) {
     headers.forEach((hdr,i)=>{
       const cur = employee.schedule[i];
       const orig = googleRef.employee.schedule[i];
+      
+      // Only count as change if original exists and differs
       if (cur!==orig && orig!=='') {
-        const origTime = SHIFT_MAP[orig] || orig;
-        const curTime = SHIFT_MAP[cur] || cur;
-        changes.push({
-          date: hdr,
-          original_shift: origTime,
-          current_shift: curTime,
-          original_code: orig,
-          current_code: cur
-        });
+        // Extract month from header (e.g., "1Oct" -> October)
+        const monthMatch = hdr.match(/[A-Za-z]+/);
+        if (monthMatch) {
+          const monthAbbr = monthMatch[0];
+          const monthMap: Record<string, number> = {
+            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+          };
+          const headerMonth = monthMap[monthAbbr];
+          
+          // Only include changes for current month
+          if (headerMonth === currentMonth) {
+            const origTime = SHIFT_MAP[orig] || orig;
+            const curTime = SHIFT_MAP[cur] || cur;
+            changes.push({
+              date: hdr,
+              original_shift: origTime,
+              current_shift: curTime,
+              original_code: orig,
+              current_code: cur
+            });
+          }
+        }
       }
     });
   }

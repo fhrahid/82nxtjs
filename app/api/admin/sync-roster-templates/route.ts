@@ -148,12 +148,21 @@ export async function POST(req: Request) {
       };
     });
     
-    // Rebuild teams
+    // Rebuild teams - ensure no duplicates by ID
     const teams: Record<string, any[]> = {};
+    const addedIds = new Set<string>();
+    
     allEmployees.forEach(emp => {
+      // Skip if already added (prevents duplicates)
+      if (addedIds.has(emp.id)) {
+        console.warn(`Duplicate employee ID ${emp.id} detected during team rebuild, skipping duplicate`);
+        return;
+      }
+      
       const teamName = emp.team || 'Unassigned';
       if (!teams[teamName]) teams[teamName] = [];
       teams[teamName].push(emp);
+      addedIds.add(emp.id);
     });
 
     // Update admin data
