@@ -38,6 +38,39 @@ export function loadAll() {
   mergeDisplay();
 }
 
+/**
+ * Reload all data from disk to refresh in-memory cache.
+ * This should be called after any external file modifications
+ * (e.g., direct file writes, hard reset, template sync).
+ */
+export function reloadAll() {
+  ensureDataDir();
+  
+  // Reset to default values first
+  const defaultGoogle: RosterData = {teams:{}, headers:[], allEmployees:[]};
+  const defaultAdmin: RosterData = {teams:{}, headers:[], allEmployees:[]};
+  const defaultModified: ModifiedShiftsData = {modifications:[], monthly_stats:{}};
+  const defaultLinks: GoogleLinks = {};
+  const defaultRequests: ScheduleRequestsFile = {
+    shift_change_requests: [],
+    swap_requests: [],
+    approved_count: 0,
+    pending_count: 0
+  };
+  const defaultSettings = {autoSyncEnabled: false};
+  
+  // Load fresh data from files
+  googleData = readJSON(GOOGLE_DATA_FILE, defaultGoogle);
+  adminData = readJSON(ADMIN_DATA_FILE, defaultAdmin);
+  modifiedShifts = readJSON(MODIFIED_SHIFTS_FILE, defaultModified);
+  googleLinks = readJSON(GOOGLE_LINKS_FILE, defaultLinks);
+  scheduleRequests = readJSON(SCHEDULE_REQUESTS_FILE, defaultRequests);
+  settings = readJSON(SETTINGS_FILE, defaultSettings);
+  
+  // Rebuild display data
+  mergeDisplay();
+}
+
 export function saveGoogle() { writeJSON(GOOGLE_DATA_FILE, googleData); }
 export function saveAdmin() { writeJSON(ADMIN_DATA_FILE, adminData); }
 export function saveModified() { writeJSON(MODIFIED_SHIFTS_FILE, modifiedShifts); }

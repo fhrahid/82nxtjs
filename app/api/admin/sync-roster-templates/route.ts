@@ -3,6 +3,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import { ROSTER_TEMPLATES_DIR, ADMIN_DATA_FILE } from '@/lib/constants';
+import { reloadAll } from '@/lib/dataStore';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
@@ -159,6 +162,9 @@ export async function POST(req: Request) {
 
     // Save updated admin data
     await fs.writeFile(ADMIN_DATA_FILE, JSON.stringify(adminData, null, 2), 'utf-8');
+
+    // Reload all data from disk to refresh in-memory cache
+    reloadAll();
 
     return NextResponse.json({
       success: true,
