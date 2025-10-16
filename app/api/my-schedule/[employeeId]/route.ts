@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDisplay, findEmployeeInGoogle } from '@/lib/dataStore';
+import { getDisplay, getModifiedShifts } from '@/lib/dataStore';
 import { formatDateHeader } from '@/lib/utils';
 import { SHIFT_MAP } from '@/lib/constants';
 
@@ -69,11 +69,13 @@ export async function GET(_: NextRequest, { params }:{params:{employeeId:string}
     if (actual) {
       const idx = headers.indexOf(actual);
       const sc = employee.schedule[idx]||'';
-      if (['DO','SL','CL','EL',''].includes(sc)) {
+      // Only include actual time off codes (DO, SL, CL, EL), exclude empty string and N/A
+      if (['DO','SL','CL','EL'].includes(sc)) {
         const dow = d.getDay();
         const weekend = dow===0||dow===6;
+        // Show leave on weekdays, or any leave type on weekends
         if (!weekend || ['SL','CL','EL'].includes(sc)) {
-          const typeDisplay = SHIFT_MAP[sc] || sc || 'N/A';
+          const typeDisplay = SHIFT_MAP[sc] || sc;
           planned.push({
             date: actual,
             day: d.toLocaleDateString('en-US',{weekday:'long'}),
@@ -85,43 +87,30 @@ export async function GET(_: NextRequest, { params }:{params:{employeeId:string}
     }
   }
 
-  // shift changes (compare google) - current month only
-  const googleRef = findEmployeeInGoogle(employeeId);
+  // shift changes from modified_shifts.json (current month only)
+  const modifiedShifts = getModifiedShifts();
   const changes:any[] = [];
   
-  if (googleRef) {
-    headers.forEach((hdr,i)=>{
-      const cur = employee.schedule[i];
-      const orig = googleRef.employee.schedule[i];
-      
-      // Only count as change if original exists and differs
-      if (cur!==orig && orig!=='') {
-        // Extract month from header (e.g., "1Oct" -> October)
-        const monthMatch = hdr.match(/[A-Za-z]+/);
-        if (monthMatch) {
-          const monthAbbr = monthMatch[0];
-          const monthMap: Record<string, number> = {
-            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
-          };
-          const headerMonth = monthMap[monthAbbr];
-          
-          // Only include changes for current month
-          if (headerMonth === currentMonth) {
-            const origTime = SHIFT_MAP[orig] || orig;
-            const curTime = SHIFT_MAP[cur] || cur;
-            changes.push({
-              date: hdr,
-              original_shift: origTime,
-              current_shift: curTime,
-              original_code: orig,
-              current_code: cur
-            });
-          }
-        }
-      }
+  // Get current month-year in format YYYY-MM
+  const monthYearKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  
+  // Filter modifications for this employee in current month
+  const employeeModifications = modifiedShifts.modifications.filter(mod => 
+    mod.employee_id === employeeId && mod.month_year === monthYearKey
+  );
+  
+  // Convert modifications to changes format
+  employeeModifications.forEach(mod => {
+    const origTime = SHIFT_MAP[mod.old_shift] || mod.old_shift || 'N/A';
+    const curTime = SHIFT_MAP[mod.new_shift] || mod.new_shift || 'N/A';
+    changes.push({
+      date: mod.date_header,
+      original_shift: origTime,
+      current_shift: curTime,
+      original_code: mod.old_shift,
+      current_code: mod.new_shift
     });
-  }
+  });
 
   return NextResponse.json({
     success:true,
