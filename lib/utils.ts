@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DATA_DIR } from './constants';
+import { parse } from 'csv-parse/sync';
 
 /**
  * Ensure data directory exists (idempotent).
@@ -102,8 +103,39 @@ export function extractMonthFromHeaders(headers: string[]): string|null {
   return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
 }
 
+/**
+ * Parse CSV text into 2D array with proper handling of quoted fields.
+ * Trims whitespace from all values and removes surrounding quotes.
+ */
 export function parseCsv(text: string): string[][] {
-  return text.split(/\r?\n/).map(r=>r.split(','));
+  try {
+    const records = parse(text, {
+      relax_column_count: true, // Allow rows with varying column counts
+      skip_empty_lines: true,
+      trim: true, // Trim whitespace from values
+      quote: '"', // Handle double-quoted fields
+      escape: '"', // Handle escaped quotes
+      bom: true // Handle BOM if present
+    });
+    
+    // Further trim any remaining whitespace and remove quotes from each cell
+    return records.map((row: string[]) => 
+      row.map((cell: string) => {
+        // Trim the cell
+        let cleaned = cell.trim();
+        // Remove surrounding quotes if present
+        if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+          cleaned = cleaned.slice(1, -1);
+        }
+        // Trim again after removing quotes (in case there's whitespace inside quotes)
+        return cleaned.trim();
+      })
+    );
+  } catch (e) {
+    console.error('CSV parsing error:', e);
+    // Fallback to simple split if parsing fails
+    return text.split(/\r?\n/).map(r=>r.split(',').map(v=>v.trim()));
+  }
 }
 
 export function formatDateHeader(date: Date) {
