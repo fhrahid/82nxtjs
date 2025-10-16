@@ -329,55 +329,102 @@ export default function RosterSyncTab({id}: Props) {
         {showTemplateSelector && (
           <div style={{
             marginTop: '16px',
-            padding: '16px',
+            padding: '20px',
             background: 'var(--theme-card-bg)',
             border: '2px solid #673AB7',
-            borderRadius: '10px'
+            borderRadius: '12px'
           }}>
-            <h4 style={{marginTop: 0, marginBottom: '12px', color: '#9575CD'}}>📁 Select Templates to Sync</h4>
+            <h4 style={{marginTop: 0, marginBottom: '16px', color: '#9575CD', fontSize: '1.1rem'}}>
+              📁 Select Templates to Sync
+            </h4>
             {availableTemplates.length === 0 ? (
-              <p style={{color: 'var(--theme-text-dim)', fontStyle: 'italic'}}>
+              <p style={{color: 'var(--theme-text-dim)', fontStyle: 'italic', marginBottom: '16px'}}>
                 No saved templates found. Create a template using the &quot;Roster Template&quot; button above.
               </p>
             ) : (
               <>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px'}}>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px', marginBottom: '16px'}}>
                   {availableTemplates.map(template => (
-                    <label
+                    <div
                       key={template.fileName}
+                      onClick={() => toggleTemplateSelection(template.fileName)}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '10px 12px',
-                        background: selectedTemplates.includes(template.fileName) ? 'rgba(103, 58, 183, 0.2)' : 'var(--theme-bg)',
-                        border: `1px solid ${selectedTemplates.includes(template.fileName) ? '#9575CD' : 'var(--theme-border)'}`,
-                        borderRadius: '6px',
+                        padding: '16px',
+                        background: selectedTemplates.includes(template.fileName) 
+                          ? 'linear-gradient(135deg, rgba(103, 58, 183, 0.25) 0%, rgba(149, 117, 205, 0.15) 100%)'
+                          : 'var(--theme-bg)',
+                        border: `2px solid ${selectedTemplates.includes(template.fileName) ? '#9575CD' : 'var(--theme-border)'}`,
+                        borderRadius: '10px',
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.2s ease',
+                        position: 'relative' as const,
+                        boxShadow: selectedTemplates.includes(template.fileName) 
+                          ? '0 4px 12px rgba(103, 58, 183, 0.3)' 
+                          : '0 2px 6px rgba(0, 0, 0, 0.1)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!selectedTemplates.includes(template.fileName)) {
+                          e.currentTarget.style.borderColor = '#9575CD';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(103, 58, 183, 0.2)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!selectedTemplates.includes(template.fileName)) {
+                          e.currentTarget.style.borderColor = 'var(--theme-border)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.1)';
+                        }
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedTemplates.includes(template.fileName)}
-                        onChange={() => toggleTemplateSelection(template.fileName)}
-                        style={{cursor: 'pointer'}}
-                      />
-                      <div style={{flex: 1}}>
-                        <div style={{fontWeight: 600, color: 'var(--theme-text)'}}>
-                          {template.monthYear}
+                      {selectedTemplates.includes(template.fileName) && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          width: '24px',
+                          height: '24px',
+                          background: '#673AB7',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 'bold'
+                        }}>
+                          ✓
                         </div>
-                        <div style={{fontSize: '0.85rem', color: 'var(--theme-text-dim)'}}>
-                          Modified: {new Date(template.modifiedAt).toLocaleDateString()} • {(template.size / 1024).toFixed(1)} KB
-                        </div>
+                      )}
+                      <div style={{
+                        fontSize: '1.1rem',
+                        fontWeight: 700,
+                        color: selectedTemplates.includes(template.fileName) ? '#B39DDB' : 'var(--theme-text)',
+                        marginBottom: '8px'
+                      }}>
+                        {template.monthYear}
                       </div>
-                    </label>
+                      <div style={{
+                        fontSize: '0.85rem',
+                        color: 'var(--theme-text-dim)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}>
+                        <div>📅 Modified: {new Date(template.modifiedAt).toLocaleDateString()}</div>
+                        <div>💾 {(template.size / 1024).toFixed(1)} KB</div>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <div style={{display: 'flex', gap: '10px', justifyContent: 'flex-end'}}>
+                <div style={{display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '8px'}}>
                   <button
                     className="btn"
                     onClick={() => setShowTemplateSelector(false)}
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '8px'
+                    }}
                   >
                     Cancel
                   </button>
@@ -386,8 +433,11 @@ export default function RosterSyncTab({id}: Props) {
                     onClick={syncSelectedTemplates}
                     disabled={selectedTemplates.length === 0 || syncingTemplates}
                     style={{
+                      padding: '10px 20px',
+                      borderRadius: '8px',
                       backgroundColor: selectedTemplates.length === 0 ? '#555' : '#673AB7',
-                      opacity: selectedTemplates.length === 0 ? 0.5 : 1
+                      opacity: selectedTemplates.length === 0 ? 0.5 : 1,
+                      cursor: selectedTemplates.length === 0 ? 'not-allowed' : 'pointer'
                     }}
                   >
                     {syncingTemplates ? '⏳ Syncing...' : `🔄 Sync ${selectedTemplates.length} Template(s)`}

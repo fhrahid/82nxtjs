@@ -239,7 +239,8 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
         body: JSON.stringify({
           schedule,
           monthYear: displayMonthName.replace(' ', '-'), // e.g., "November-2025"
-          employees: allEmployees
+          employees: allEmployees,
+          monthOffset
         })
       });
       

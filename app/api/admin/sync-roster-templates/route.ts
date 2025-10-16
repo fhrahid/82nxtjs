@@ -28,9 +28,13 @@ export async function POST(req: Request) {
     adminData.allEmployees?.forEach((emp: any) => {
       employeeMap.set(emp.id, {
         ...emp,
-        schedule: emp.schedule || []
+        schedule: Array.isArray(emp.schedule) ? [...emp.schedule] : []
       });
     });
+
+    // Calculate today for date index mapping
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     // Process each template file
     for (const fileName of templateFiles) {
@@ -43,6 +47,40 @@ export async function POST(req: Request) {
           skip_empty_lines: true,
           trim: true
         });
+
+        if (records.length === 0) continue;
+
+        // Extract month and year from the CSV
+        const firstRecord = records[0];
+        const monthName = firstRecord['Month'];
+        const yearStr = firstRecord['Year'];
+        
+        if (!monthName || !yearStr) {
+          console.error(`Template ${fileName} is missing Month or Year columns`);
+          continue;
+        }
+
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const month = monthNames.indexOf(monthName);
+        const year = parseInt(yearStr);
+
+        if (month === -1 || isNaN(year)) {
+          console.error(`Invalid month or year in template ${fileName}`);
+          continue;
+        }
+
+        // Calculate the number of days in this month
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        
+        // Calculate offset from today to the start of this month
+        const targetMonthStart = new Date(year, month, 1);
+        const offsetDays = Math.floor((targetMonthStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Get column names for dates (skip Employee ID, Employee Name, Team, Month, Year)
+        const columns = Object.keys(firstRecord);
+        const dateColumns = columns.filter(col => 
+          !['Employee ID', 'Employee Name', 'Team', 'Month', 'Year'].includes(col)
+        );
 
         // Process each employee in the template
         for (const record of records) {
@@ -68,18 +106,20 @@ export async function POST(req: Request) {
             if (team) employee.team = team;
           }
 
-          // Merge schedule data (Day1, Day2, ... Day90)
-          for (let i = 1; i <= 90; i++) {
-            const dayKey = `Day${i}`;
-            const shift = record[dayKey];
+          // Ensure schedule array is long enough (90 days)
+          while (employee.schedule.length < 90) {
+            employee.schedule.push('');
+          }
+
+          // Map template shifts to correct date indices
+          for (let dayInMonth = 0; dayInMonth < lastDay && dayInMonth < dateColumns.length; dayInMonth++) {
+            const dateColumn = dateColumns[dayInMonth];
+            const shift = record[dateColumn];
+            const dateIdx = offsetDays + dayInMonth;
             
-            if (shift) {
-              // Ensure schedule array is long enough
-              while (employee.schedule.length < i) {
-                employee.schedule.push('');
-              }
-              // Only update if there's a shift value in the template
-              employee.schedule[i - 1] = shift;
+            // Only update if within 90-day window and has a shift value
+            if (dateIdx >= 0 && dateIdx < 90 && shift && shift.trim()) {
+              employee.schedule[dateIdx] = shift.trim();
             }
           }
         }
@@ -103,7 +143,6 @@ export async function POST(req: Request) {
     // Generate headers if not present (90 days from today)
     if (!adminData.headers || adminData.headers.length === 0) {
       const headers: string[] = [];
-      const today = new Date();
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
       for (let i = 0; i < 90; i++) {
