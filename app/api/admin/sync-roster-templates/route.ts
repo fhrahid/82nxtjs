@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import { ROSTER_TEMPLATES_DIR, ADMIN_DATA_FILE } from '@/lib/constants';
+import { setAdmin, getAdmin, loadAll } from '@/lib/dataStore';
 
 export async function POST(req: Request) {
   try {
@@ -162,8 +163,8 @@ export async function POST(req: Request) {
     adminData.allEmployees = allEmployees;
     adminData.teams = teams;
 
-    // Save updated admin data
-    await fs.writeFile(ADMIN_DATA_FILE, JSON.stringify(adminData, null, 2), 'utf-8');
+    // Use setAdmin to properly update in-memory data and trigger mergeDisplay
+    setAdmin(adminData);
 
     return NextResponse.json({
       success: true,
