@@ -16,16 +16,23 @@ interface Props {
   onClose: () => void;
   employees: Employee[];
   onSave: (updatedSchedule: Record<string, string[]>) => Promise<void>;
+  onAddEmployee?: (name: string, id: string, team: string) => Promise<void>;
+  onChangeTeam?: (employeeId: string, newTeam: string) => Promise<void>;
 }
 
 const SHIFT_OPTIONS = ['M2', 'M3', 'M4', 'D1', 'D2', 'DO', 'SL', 'CL', 'EL', 'HL'];
 
-export default function RosterTemplateModal({ open, onClose, employees, onSave }: Props) {
+export default function RosterTemplateModal({ open, onClose, employees, onSave, onAddEmployee, onChangeTeam }: Props) {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [monthOffset, setMonthOffset] = useState(0);
   const [schedule, setSchedule] = useState<Record<string, string[]>>({});
   const [editingCell, setEditingCell] = useState<{empId: string, dateIdx: number} | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [newEmpName, setNewEmpName] = useState('');
+  const [newEmpId, setNewEmpId] = useState('');
+  const [newEmpTeam, setNewEmpTeam] = useState('');
+  const [editingTeam, setEditingTeam] = useState<{empId: string, currentTeam: string} | null>(null);
 
   // Initialize schedule with empty values
   useEffect(() => {
@@ -75,7 +82,7 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave }
     const dates: {day: number, date: string, dayName: string, dateIdx: number}[] = [];
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                         'July', 'August', 'September', 'October', 'November', 'December'];
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
     // Calculate the base index (days from today)
     const todayDate = new Date();
@@ -84,7 +91,7 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave }
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(targetYear, adjustedMonth, day);
       const dayName = dayNames[currentDate.getDay()];
-      const dateStr = `${adjustedMonth + 1}/${day}`;
+      const dateStr = `${day} ${monthNames[adjustedMonth]}`;
       
       // Calculate days from today
       const diffTime = currentDate.getTime() - todayDate.getTime();
@@ -155,7 +162,7 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave }
           Create roster schedules for future months. Click on any cell to assign a shift.
         </p>
 
-        {/* Team Filters */}
+        {/* Team Filters and Add Employee */}
         <div style={{marginBottom: '20px'}}>
           <div style={{
             display: 'flex',
@@ -177,6 +184,15 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave }
             ))}
             <button className="btn tiny" onClick={selectAllTeams}>Select All</button>
             <button className="btn tiny" onClick={clearAllTeams}>Clear All</button>
+            {onAddEmployee && (
+              <button 
+                className="btn tiny primary" 
+                onClick={() => setShowAddEmployee(true)}
+                style={{marginLeft: 'auto'}}
+              >
+                ➕ Add Employee
+              </button>
+            )}
           </div>
         </div>
 
@@ -217,9 +233,8 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave }
                   Employee
                 </th>
                 {displayDates.map(d => (
-                  <th key={d.dateIdx} style={{minWidth: '120px', textAlign: 'center'}}>
-                    <div>{d.dayName}</div>
-                    <div style={{fontSize: '0.85rem', color: 'var(--theme-text-dim)'}}>{d.date}</div>
+                  <th key={d.dateIdx} style={{minWidth: '150px', textAlign: 'center'}}>
+                    <div style={{fontSize: '0.9rem'}}>{d.dayName}, {d.date}</div>
                   </th>
                 ))}
               </tr>
@@ -229,8 +244,31 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave }
                 <tr key={emp.id}>
                   <td style={{position: 'sticky', left: 0, background: 'var(--theme-card-bg)', zIndex: 1}}>
                     <div style={{fontWeight: 'bold'}}>{emp.name}</div>
-                    <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>{emp.id}</div>
-                    {emp.team && <div style={{fontSize: '0.75rem', color: 'var(--theme-text-dim)'}}>{emp.team}</div>}
+                    <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>
+                      {emp.id}
+                      {emp.team && (
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onChangeTeam && emp.team) {
+                              setEditingTeam({empId: emp.id, currentTeam: emp.team});
+                            }
+                          }}
+                          style={{
+                            marginLeft: '8px',
+                            padding: '2px 6px',
+                            background: 'var(--theme-primary)',
+                            color: 'white',
+                            borderRadius: '4px',
+                            cursor: onChangeTeam ? 'pointer' : 'default',
+                            fontSize: '0.75rem'
+                          }}
+                          title={onChangeTeam ? 'Click to change team' : emp.team}
+                        >
+                          {emp.team}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   {displayDates.map(d => {
                     const shift = schedule[emp.id]?.[d.dateIdx] || '';
@@ -345,6 +383,175 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave }
           }}
           onClick={() => setEditingCell(null)}
         />
+      )}
+
+      {/* Add Employee Modal */}
+      {showAddEmployee && onAddEmployee && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'var(--theme-card-bg)',
+            borderRadius: '12px',
+            padding: '30px',
+            minWidth: '400px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+          }}>
+            <h3 style={{marginTop: 0}}>Add New Employee</h3>
+            <div style={{marginBottom: '15px'}}>
+              <label style={{display: 'block', marginBottom: '5px', fontWeight: 500}}>Name</label>
+              <input
+                type="text"
+                value={newEmpName}
+                onChange={(e) => setNewEmpName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--theme-border)',
+                  background: 'var(--theme-bg)',
+                  color: 'var(--theme-text)'
+                }}
+                placeholder="Employee Name"
+              />
+            </div>
+            <div style={{marginBottom: '15px'}}>
+              <label style={{display: 'block', marginBottom: '5px', fontWeight: 500}}>Employee ID</label>
+              <input
+                type="text"
+                value={newEmpId}
+                onChange={(e) => setNewEmpId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--theme-border)',
+                  background: 'var(--theme-bg)',
+                  color: 'var(--theme-text)'
+                }}
+                placeholder="SLL-XXXXX"
+              />
+            </div>
+            <div style={{marginBottom: '20px'}}>
+              <label style={{display: 'block', marginBottom: '5px', fontWeight: 500}}>Team</label>
+              <select
+                value={newEmpTeam}
+                onChange={(e) => setNewEmpTeam(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--theme-border)',
+                  background: 'var(--theme-bg)',
+                  color: 'var(--theme-text)'
+                }}
+              >
+                <option value="">Select Team</option>
+                {teamNames.map(team => (
+                  <option key={team} value={team}>{team}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{display: 'flex', gap: '10px', justifyContent: 'flex-end'}}>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowAddEmployee(false);
+                  setNewEmpName('');
+                  setNewEmpId('');
+                  setNewEmpTeam('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn primary"
+                onClick={async () => {
+                  if (newEmpName && newEmpId && newEmpTeam) {
+                    try {
+                      await onAddEmployee(newEmpName, newEmpId, newEmpTeam);
+                      setShowAddEmployee(false);
+                      setNewEmpName('');
+                      setNewEmpId('');
+                      setNewEmpTeam('');
+                    } catch (e) {
+                      alert('Failed to add employee');
+                    }
+                  } else {
+                    alert('Please fill in all fields');
+                  }
+                }}
+                disabled={!newEmpName || !newEmpId || !newEmpTeam}
+              >
+                Add Employee
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Team Change Dropdown */}
+      {editingTeam && onChangeTeam && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'var(--theme-card-bg)',
+            borderRadius: '12px',
+            padding: '30px',
+            minWidth: '350px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+          }}>
+            <h3 style={{marginTop: 0}}>Change Team</h3>
+            <p style={{color: 'var(--theme-text-dim)', marginBottom: '20px'}}>
+              Current team: <strong>{editingTeam.currentTeam}</strong>
+            </p>
+            <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+              {teamNames.filter(t => t !== editingTeam.currentTeam).map(team => (
+                <button
+                  key={team}
+                  className="btn"
+                  onClick={async () => {
+                    try {
+                      await onChangeTeam(editingTeam.empId, team);
+                      setEditingTeam(null);
+                      alert(`Team changed to ${team} successfully!`);
+                    } catch (e) {
+                      alert('Failed to change team');
+                    }
+                  }}
+                  style={{
+                    padding: '12px',
+                    textAlign: 'left',
+                    background: 'var(--theme-primary)',
+                    color: 'white'
+                  }}
+                >
+                  {team}
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn"
+              onClick={() => setEditingTeam(null)}
+              style={{marginTop: '15px', width: '100%'}}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </Modal>
   );

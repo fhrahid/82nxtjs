@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import MonthCompactCalendar from '../Shared/MonthCompactCalendar';
 import GoogleSheetsRosterModal from '../Shared/GoogleSheetsRosterModal';
+import AdminRosterDataModal from '../Shared/AdminRosterDataModal';
 import { SHIFT_MAP } from '@/lib/constants';
 
 interface Props { id: string; }
@@ -23,6 +24,9 @@ export default function RosterDataTab({id}:Props) {
   
   // Google Sheets Roster Modal state
   const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
+  
+  // Admin Roster Data Modal state
+  const [showAdminRosterModal, setShowAdminRosterModal] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -171,6 +175,13 @@ export default function RosterDataTab({id}:Props) {
             disabled={loading || !googleData}
           >
             📊 Google Sheets Roster
+          </button>
+          <button 
+            className="rd-btn admin-roster" 
+            onClick={() => setShowAdminRosterModal(true)} 
+            disabled={loading || !adminData}
+          >
+            ✏️ Admin Roster Data
           </button>
         </div>
       </div>
@@ -371,6 +382,30 @@ export default function RosterDataTab({id}:Props) {
           onClose={() => setShowGoogleSheetsModal(false)}
           headers={googleData.headers || []}
           teams={googleData.teams || {}}
+        />
+      )}
+
+      {/* Admin Roster Data Modal */}
+      {adminData && (
+        <AdminRosterDataModal
+          open={showAdminRosterModal}
+          onClose={() => {
+            setShowAdminRosterModal(false);
+            load(); // Reload data when modal closes
+          }}
+          headers={adminData.headers || []}
+          teams={adminData.teams || {}}
+          onUpdateShift={async (employeeId, dateIndex, newShift) => {
+            const original = findGoogleShift(employeeId, dateIndex);
+            const res = await fetch('/api/admin/update-shift',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({employeeId, dateIndex, newShift, googleShift:original})
+            }).then(r=>r.json());
+            if (!res.success) {
+              throw new Error(res.error || 'Update failed');
+            }
+          }}
         />
       )}
 
