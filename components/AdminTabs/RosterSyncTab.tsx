@@ -35,6 +35,7 @@ export default function RosterSyncTab({id}: Props) {
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [syncingTemplates, setSyncingTemplates] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<{fileName: string, monthYear: string} | null>(null);
 
   const load = useCallback(async function() {
     setLoading(true);
@@ -210,6 +211,53 @@ export default function RosterSyncTab({id}: Props) {
     }
   }
 
+  async function deleteTemplate(fileName: string, monthYear: string) {
+    if (!confirm(`Are you sure you want to delete the template for ${monthYear}?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/delete-roster-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert(result.message);
+        loadTemplates(); // Reload the templates list
+      } else {
+        alert(`Failed to delete template: ${result.error}`);
+      }
+    } catch (e) {
+      console.error('Failed to delete template:', e);
+      alert('Failed to delete template');
+    }
+  }
+
+  async function editTemplate(fileName: string, monthYear: string) {
+    try {
+      const res = await fetch('/api/admin/load-roster-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        setEditingTemplate({ fileName, monthYear: result.data.monthYear });
+        setTemplateData(result.data);
+        setShowRosterTemplate(true);
+      } else {
+        alert(`Failed to load template: ${result.error}`);
+      }
+    } catch (e) {
+      console.error('Failed to load template:', e);
+      alert('Failed to load template');
+    }
+  }
+
   async function syncSelectedTemplates() {
     if (selectedTemplates.length === 0) {
       alert('Please select at least one template to sync');
@@ -347,7 +395,6 @@ export default function RosterSyncTab({id}: Props) {
                   {availableTemplates.map(template => (
                     <div
                       key={template.fileName}
-                      onClick={() => toggleTemplateSelection(template.fileName)}
                       style={{
                         padding: '16px',
                         background: selectedTemplates.includes(template.fileName) 
@@ -377,42 +424,90 @@ export default function RosterSyncTab({id}: Props) {
                         }
                       }}
                     >
-                      {selectedTemplates.includes(template.fileName) && (
+                      <div onClick={() => toggleTemplateSelection(template.fileName)}>
+                        {selectedTemplates.includes(template.fileName) && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            width: '24px',
+                            height: '24px',
+                            background: '#673AB7',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                          }}>
+                            ✓
+                          </div>
+                        )}
                         <div style={{
-                          position: 'absolute',
-                          top: '8px',
-                          right: '8px',
-                          width: '24px',
-                          height: '24px',
-                          background: '#673AB7',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                          fontSize: '14px',
-                          fontWeight: 'bold'
+                          fontSize: '1.1rem',
+                          fontWeight: 700,
+                          color: selectedTemplates.includes(template.fileName) ? '#B39DDB' : 'var(--theme-text)',
+                          marginBottom: '8px'
                         }}>
-                          ✓
+                          {template.monthYear}
                         </div>
-                      )}
-                      <div style={{
-                        fontSize: '1.1rem',
-                        fontWeight: 700,
-                        color: selectedTemplates.includes(template.fileName) ? '#B39DDB' : 'var(--theme-text)',
-                        marginBottom: '8px'
-                      }}>
-                        {template.monthYear}
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--theme-text-dim)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
+                        }}>
+                          <div>📅 Modified: {new Date(template.modifiedAt).toLocaleDateString()}</div>
+                          <div>💾 {(template.size / 1024).toFixed(1)} KB</div>
+                        </div>
                       </div>
                       <div style={{
-                        fontSize: '0.85rem',
-                        color: 'var(--theme-text-dim)',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px'
+                        gap: '8px',
+                        marginTop: '12px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid var(--theme-border)'
                       }}>
-                        <div>📅 Modified: {new Date(template.modifiedAt).toLocaleDateString()}</div>
-                        <div>💾 {(template.size / 1024).toFixed(1)} KB</div>
+                        <button
+                          className="btn tiny"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editTemplate(template.fileName, template.monthYear);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '6px 12px',
+                            fontSize: '0.8rem',
+                            backgroundColor: '#2196F3',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          className="btn tiny danger"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTemplate(template.fileName, template.monthYear);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '6px 12px',
+                            fontSize: '0.8rem',
+                            backgroundColor: '#F44336',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🗑️ Delete
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -577,9 +672,15 @@ export default function RosterSyncTab({id}: Props) {
       {/* Roster Template Modal */}
       <RosterTemplateModal
         open={showRosterTemplate}
-        onClose={() => setShowRosterTemplate(false)}
+        onClose={() => {
+          setShowRosterTemplate(false);
+          setTemplateData(null);
+          setEditingTemplate(null);
+          loadTemplates(); // Refresh templates list after closing
+        }}
         employees={allEmployees}
         onSave={handleSaveRosterTemplate}
+        templateData={templateData}
       />
     </div>
   );
