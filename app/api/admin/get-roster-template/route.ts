@@ -4,6 +4,8 @@ import path from 'path';
 import { parse } from 'csv-parse/sync';
 import { ROSTER_TEMPLATES_DIR } from '@/lib/constants';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
