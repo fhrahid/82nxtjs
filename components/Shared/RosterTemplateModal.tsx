@@ -24,7 +24,7 @@ const SHIFT_OPTIONS = ['M2', 'M3', 'M4', 'D1', 'D2', 'DO', 'SL', 'CL', 'EL', 'HL
 
 export default function RosterTemplateModal({ open, onClose, employees, onSave, onAddEmployee, onChangeTeam }: Props) {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
-  const [monthOffset, setMonthOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(1); // Start with next month
   const [schedule, setSchedule] = useState<Record<string, string[]>>({});
   const [editingCell, setEditingCell] = useState<{empId: string, dateIdx: number} | null>(null);
   const [saving, setSaving] = useState(false);
@@ -108,7 +108,7 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
     return {
       displayDates: dates,
       displayMonthName: `${monthNames[adjustedMonth]} ${targetYear}`,
-      canGoPrev: monthOffset > 0,
+      canGoPrev: monthOffset > 1, // Can't go before next month
       canGoNext: monthOffset < 11 // Limit to 12 months in future
     };
   }, [monthOffset]);
@@ -245,9 +245,9 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
                   Employee
                 </th>
                 {displayDates.map(d => (
-                  <th key={d.dateIdx} style={{minWidth: '120px', textAlign: 'center', padding: '8px 4px'}}>
-                    <div style={{fontSize: '0.85rem', fontWeight: 'bold'}}>{d.dayName}</div>
-                    <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>{d.date}</div>
+                  <th key={d.dateIdx} style={{minWidth: '90px', textAlign: 'center', padding: '6px 4px'}}>
+                    <div style={{fontSize: '0.75rem', fontWeight: 'bold'}}>{d.dayName}</div>
+                    <div style={{fontSize: '0.7rem', color: 'var(--theme-text-dim)'}}>{d.date}</div>
                   </th>
                 ))}
               </tr>

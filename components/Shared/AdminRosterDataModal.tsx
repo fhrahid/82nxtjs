@@ -58,11 +58,18 @@ function detectAvailableMonths(headers: string[]): Set<string> {
 
 export default function AdminRosterDataModal({ open, onClose, headers, teams, onUpdateShift }: Props) {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
-  const [monthOffset, setMonthOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0); // Start with current month
   const [editingCell, setEditingCell] = useState<{empId: string, dateIdx: number} | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingTeam, setEditingTeam] = useState<{empId: string, currentTeam: string} | null>(null);
   const [localSchedule, setLocalSchedule] = useState<Record<string, string[]>>({});
+  
+  // Reset monthOffset to 0 when modal opens (current month)
+  useEffect(() => {
+    if (open) {
+      setMonthOffset(0);
+    }
+  }, [open]);
 
   const teamNames = useMemo(() => Object.keys(teams || {}), [teams]);
 
@@ -97,10 +104,10 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
     const availableMonths = detectAvailableMonths(headers);
     const now = new Date();
     let year = now.getFullYear();
-    let monthIndex = det ? det.monthIndex : now.getMonth();
+    // Always start from current month and apply offset
+    let monthIndex = now.getMonth() + monthOffset;
     
-    // Apply month offset
-    monthIndex += monthOffset;
+    // Adjust year if month goes outside 0-11 range
     while (monthIndex < 0) {
       monthIndex += 12;
       year -= 1;
@@ -288,15 +295,15 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
         {/* Roster Grid */}
         <div style={{overflowX: 'auto', overflowY: 'auto', maxHeight: '500px'}}>
           <table className="data-table" style={{minWidth: '100%'}}>
-            <thead style={{position: 'sticky', top: 0, background: 'var(--theme-bg)', zIndex: 2}}>
+            <thead style={{position: 'sticky', top: 0, background: 'var(--theme-bg)', zIndex: 10}}>
               <tr>
-                <th style={{position: 'sticky', left: 0, zIndex: 3, background: 'var(--theme-card-bg)'}}>
+                <th style={{position: 'sticky', left: 0, zIndex: 11, background: 'var(--theme-card-bg)', minWidth: '220px'}}>
                   Employee
                 </th>
                 {displayDates.map((d, idx) => (
-                  <th key={idx} style={{minWidth: '120px', textAlign: 'center', padding: '8px 4px'}}>
-                    <div style={{fontSize: '0.85rem', fontWeight: 'bold'}}>{d.dayName}</div>
-                    <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>{d.dateStr}</div>
+                  <th key={idx} style={{minWidth: '90px', textAlign: 'center', padding: '6px 4px'}}>
+                    <div style={{fontSize: '0.75rem', fontWeight: 'bold'}}>{d.dayName}</div>
+                    <div style={{fontSize: '0.7rem', color: 'var(--theme-text-dim)'}}>{d.dateStr}</div>
                   </th>
                 ))}
               </tr>
@@ -304,7 +311,7 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
             <tbody>
               {filteredEmployees.map(emp => (
                 <tr key={emp.id}>
-                  <td style={{position: 'sticky', left: 0, background: 'var(--theme-card-bg)', zIndex: 1}}>
+                  <td style={{position: 'sticky', left: 0, background: 'var(--theme-card-bg)', zIndex: 5, minWidth: '220px'}}>
                     <div style={{fontWeight: 'bold'}}>{emp.name}</div>
                     <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>
                       {emp.id}

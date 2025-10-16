@@ -60,15 +60,21 @@ export default function MonthCompactCalendar({
   useEffect(() => {
     if (!hasAutoSelected && headers.length > 0 && !selectedDate && onSelect) {
       const now = new Date();
-      const det = detectMonth(headers);
-      const monthIndex = det ? det.monthIndex : now.getMonth();
+      const currentMonth = now.getMonth();
       const day = now.getDate();
-      const monthName = MONTH_NAME[monthIndex];
+      const monthName = MONTH_NAME[currentMonth];
       const todayHeader = `${day}${monthName}`;
       
+      // Check if today's header exists in the headers array
       if (headers.includes(todayHeader)) {
         onSelect(todayHeader);
         setHasAutoSelected(true);
+        // Set month offset to show current month
+        const det = detectMonth(headers);
+        if (det && det.monthIndex !== currentMonth) {
+          // Calculate offset to show current month
+          setMonthOffset(currentMonth - det.monthIndex);
+        }
       }
     }
   }, [headers, selectedDate, onSelect, hasAutoSelected]);
