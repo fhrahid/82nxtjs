@@ -200,28 +200,40 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: '15px',
+          justifyContent: 'space-between',
           marginBottom: '20px',
           padding: '10px',
           background: 'var(--theme-card-bg)',
           borderRadius: '8px'
         }}>
-          <button
-            className="btn"
-            onClick={() => setMonthOffset(monthOffset - 1)}
-            disabled={!canGoPrev}
-          >
-            ← Previous
-          </button>
-          <strong style={{fontSize: '1.1rem'}}>{displayMonthName}</strong>
-          <button
-            className="btn"
-            onClick={() => setMonthOffset(monthOffset + 1)}
-            disabled={!canGoNext}
-          >
-            Next →
-          </button>
+          <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+            <button
+              className="btn"
+              onClick={() => setMonthOffset(monthOffset - 1)}
+              disabled={!canGoPrev}
+            >
+              ← Previous
+            </button>
+            <strong style={{fontSize: '1.1rem'}}>{displayMonthName}</strong>
+            <button
+              className="btn"
+              onClick={() => setMonthOffset(monthOffset + 1)}
+              disabled={!canGoNext}
+            >
+              Next →
+            </button>
+          </div>
+          
+          {/* Schedule Information */}
+          <div style={{
+            display: 'flex',
+            gap: '15px',
+            fontSize: '0.85rem',
+            color: 'var(--theme-text-dim)'
+          }}>
+            <div><strong>{filteredEmployees.length}</strong> Employees</div>
+            <div><strong>{displayDates.length}</strong> Days</div>
+          </div>
         </div>
 
         {/* Roster Grid */}
@@ -233,8 +245,9 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
                   Employee
                 </th>
                 {displayDates.map(d => (
-                  <th key={d.dateIdx} style={{minWidth: '150px', textAlign: 'center'}}>
-                    <div style={{fontSize: '0.9rem'}}>{d.dayName}, {d.date}</div>
+                  <th key={d.dateIdx} style={{minWidth: '120px', textAlign: 'center', padding: '8px 4px'}}>
+                    <div style={{fontSize: '0.85rem', fontWeight: 'bold'}}>{d.dayName}</div>
+                    <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>{d.date}</div>
                   </th>
                 ))}
               </tr>

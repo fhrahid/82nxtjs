@@ -61,8 +61,21 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
   const [monthOffset, setMonthOffset] = useState(0);
   const [editingCell, setEditingCell] = useState<{empId: string, dateIdx: number} | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<{empId: string, currentTeam: string} | null>(null);
+  const [localSchedule, setLocalSchedule] = useState<Record<string, string[]>>({});
 
   const teamNames = useMemo(() => Object.keys(teams || {}), [teams]);
+
+  // Initialize local schedule from teams data
+  useEffect(() => {
+    const initial: Record<string, string[]> = {};
+    Object.values(teams || {}).forEach(empList => {
+      empList.forEach(emp => {
+        initial[emp.id] = [...emp.schedule];
+      });
+    });
+    setLocalSchedule(initial);
+  }, [teams]);
 
   const toggleTeam = (team: string) => {
     setSelectedTeams(prev => 
@@ -175,12 +188,27 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
     setSaving(true);
     try {
       await onUpdateShift(editingCell.empId, editingCell.dateIdx, shift);
+      
+      // Update local schedule immediately for instant UI update
+      setLocalSchedule(prev => ({
+        ...prev,
+        [editingCell.empId]: prev[editingCell.empId].map((s, idx) => 
+          idx === editingCell.dateIdx ? shift : s
+        )
+      }));
+      
       setEditingCell(null);
     } catch (e) {
       alert('Failed to update shift');
       console.error(e);
     }
     setSaving(false);
+  }
+
+  async function handleTeamChange(empId: string, newTeam: string) {
+    // This would need an API endpoint to update employee team
+    alert(`Team change feature needs API endpoint: ${empId} -> ${newTeam}`);
+    setEditingTeam(null);
   }
 
   if (!open) return null;
@@ -221,28 +249,40 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: '15px',
+          justifyContent: 'space-between',
           marginBottom: '20px',
           padding: '10px',
           background: 'var(--theme-card-bg)',
           borderRadius: '8px'
         }}>
-          <button
-            className="btn"
-            onClick={() => setMonthOffset(monthOffset - 1)}
-            disabled={!canGoPrev}
-          >
-            ← Previous
-          </button>
-          <strong style={{fontSize: '1.1rem'}}>{displayMonthName}</strong>
-          <button
-            className="btn"
-            onClick={() => setMonthOffset(monthOffset + 1)}
-            disabled={!canGoNext}
-          >
-            Next →
-          </button>
+          <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+            <button
+              className="btn"
+              onClick={() => setMonthOffset(monthOffset - 1)}
+              disabled={!canGoPrev}
+            >
+              ← Previous
+            </button>
+            <strong style={{fontSize: '1.1rem'}}>{displayMonthName}</strong>
+            <button
+              className="btn"
+              onClick={() => setMonthOffset(monthOffset + 1)}
+              disabled={!canGoNext}
+            >
+              Next →
+            </button>
+          </div>
+          
+          {/* Schedule Information */}
+          <div style={{
+            display: 'flex',
+            gap: '15px',
+            fontSize: '0.85rem',
+            color: 'var(--theme-text-dim)'
+          }}>
+            <div><strong>{filteredEmployees.length}</strong> Employees</div>
+            <div><strong>{displayDates.length}</strong> Days</div>
+          </div>
         </div>
 
         {/* Roster Grid */}
@@ -254,8 +294,9 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
                   Employee
                 </th>
                 {displayDates.map((d, idx) => (
-                  <th key={idx} style={{minWidth: '150px', textAlign: 'center'}}>
-                    <div style={{fontSize: '0.9rem'}}>{d.dayName}, {d.dateStr}</div>
+                  <th key={idx} style={{minWidth: '120px', textAlign: 'center', padding: '8px 4px'}}>
+                    <div style={{fontSize: '0.85rem', fontWeight: 'bold'}}>{d.dayName}</div>
+                    <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>{d.dateStr}</div>
                   </th>
                 ))}
               </tr>
@@ -268,7 +309,22 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
                     <div style={{fontSize: '0.8rem', color: 'var(--theme-text-dim)'}}>
                       {emp.id}
                       {emp.teamName && (
-                        <span style={{marginLeft: '8px', padding: '2px 6px', background: 'var(--theme-primary)', color: 'white', borderRadius: '4px', fontSize: '0.75rem'}}>
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingTeam({empId: emp.id, currentTeam: emp.teamName});
+                          }}
+                          style={{
+                            marginLeft: '8px',
+                            padding: '2px 6px',
+                            background: 'var(--theme-primary)',
+                            color: 'white',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer'
+                          }}
+                          title="Click to change team"
+                        >
                           {emp.teamName}
                         </span>
                       )}
@@ -276,7 +332,7 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
                   </td>
                   {displayHeaders.map((header, dateIdx) => {
                     const headerIdx = headers.indexOf(header);
-                    const shift = emp.schedule[headerIdx] || '';
+                    const shift = localSchedule[emp.id]?.[headerIdx] || emp.schedule[headerIdx] || '';
                     const isEditing = editingCell?.empId === emp.id && editingCell?.dateIdx === headerIdx;
                     
                     return (
@@ -387,6 +443,57 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
           }}
           onClick={() => !saving && setEditingCell(null)}
         />
+      )}
+
+      {/* Team Change Modal */}
+      {editingTeam && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'var(--theme-card-bg)',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '90%',
+            maxWidth: '400px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+          }}>
+            <h3 style={{marginTop: 0, marginBottom: '16px'}}>Change Team</h3>
+            <p style={{color: 'var(--theme-text-dim)', marginBottom: '16px'}}>
+              Select new team for this employee:
+            </p>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '10px',
+              marginBottom: '20px'
+            }}>
+              {teamNames.filter(t => t !== editingTeam.currentTeam).map(team => (
+                <button
+                  key={team}
+                  className="btn"
+                  onClick={() => handleTeamChange(editingTeam.empId, team)}
+                  style={{padding: '10px'}}
+                >
+                  {team}
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn"
+              onClick={() => setEditingTeam(null)}
+              style={{width: '100%'}}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </Modal>
   );
