@@ -9,7 +9,6 @@ export default function CsvImportTab({id}:Props) {
   const [message,setMessage]=useState('');
   const [monthInfo,setMonthInfo]=useState('');
   const [exporting,setExporting]=useState(false);
-  const [resetting,setResetting]=useState(false);
   const [availableMonths,setAvailableMonths]=useState<string[]>([]);
   const [selectedMonths,setSelectedMonths]=useState<string[]>([]);
   const [exportAll,setExportAll]=useState(true);
@@ -87,30 +86,7 @@ export default function CsvImportTab({id}:Props) {
     setExporting(false);
   }
 
-  async function hardReset() {
-    if (!confirm('⚠️ WARNING: This will permanently delete google_data.json and admin_data.json. All schedule data will be lost. Are you sure?')) {
-      return;
-    }
-    if (!confirm('This action cannot be undone. Are you absolutely sure you want to proceed?')) {
-      return;
-    }
-    
-    setResetting(true);
-    try {
-      const res = await fetch('/api/admin/hard-reset', {method: 'POST'}).then(r => r.json());
-      if (res.success) {
-        alert(res.message);
-        setMessage('Data has been reset. Please refresh the page.');
-        loadAvailableMonths();
-      } else {
-        alert(res.error || 'Reset failed');
-      }
-    } catch (e) {
-      alert('Reset failed');
-      console.error(e);
-    }
-    setResetting(false);
-  }
+
 
   function toggleMonth(month: string) {
     if (selectedMonths.includes(month)) {
@@ -199,24 +175,6 @@ export default function CsvImportTab({id}:Props) {
               onClick={exportCsv}
             >
               {exporting ? 'Exporting...' : '📥 Export CSV'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div style={{marginTop: '30px'}}>
-        <h2>Hard Reset</h2>
-        <p style={{color: '#ff6b6b'}}>⚠️ Danger Zone: This will permanently delete all schedule data.</p>
-        <div className="import-box" style={{borderColor: '#ff6b6b'}}>
-          <p>This action will delete <code>google_data.json</code> and <code>admin_data.json</code> files, resetting all schedules to empty state.</p>
-          <div className="actions-row">
-            <button 
-              className="btn" 
-              style={{backgroundColor: '#ff6b6b', color: 'white'}}
-              disabled={resetting} 
-              onClick={hardReset}
-            >
-              {resetting ? 'Resetting...' : '🗑️ Hard Reset All Data'}
             </button>
           </div>
         </div>

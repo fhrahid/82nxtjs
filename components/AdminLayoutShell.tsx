@@ -18,8 +18,7 @@ import { ThemeProvider, useTheme, themes } from '@/contexts/ThemeContext';
 const bottomTabs = [
   { id: 'dashboard',          label: 'Dashboard',          icon: LayoutDashboard },
   { id: 'schedule-requests',  label: 'Schedule Requests',  icon: Calendar },
-  { id: 'data-sync',          label: 'Data Sync',          icon: RefreshCw },
-  { id: 'google-links',       label: 'Google Sheets',      icon: Link },
+  { id: 'roster-sync',        label: 'Roster Sync',        icon: RefreshCw },
   { id: 'roster-data',        label: 'Roster Data',        icon: BarChart3 },
   { id: 'csv-import',         label: 'CSV Import',         icon: FileUp }
 ];

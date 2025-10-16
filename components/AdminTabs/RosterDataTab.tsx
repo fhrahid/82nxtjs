@@ -11,7 +11,6 @@ export default function RosterDataTab({id}:Props) {
   const [googleData,setGoogleData]=useState<any>(null);
   const [loading,setLoading]=useState(false);
   const [saving,setSaving]=useState(false);
-  const [resetting,setResetting]=useState(false);
   
   // Shift view states (inline, not modal)
   const [selectedDate, setSelectedDate] = useState('');
@@ -152,18 +151,7 @@ export default function RosterDataTab({id}:Props) {
     }
   }
 
-  async function resetToGoogleOrCSV() {
-    if (!confirm('Reset admin data to Google spreadsheet or CSV data? This will remove all manual overrides.')) return;
-    setResetting(true);
-    const res = await fetch('/api/admin/reset-to-google',{method:'POST'}).then(r=>r.json());
-    setResetting(false);
-    if (!res.success) {
-      alert(res.error||'Reset failed');
-    } else {
-      alert('Admin data reset successfully!');
-      load();
-    }
-  }
+
 
   return (
     <div id={id} className="roster-data-root">
@@ -183,13 +171,6 @@ export default function RosterDataTab({id}:Props) {
             disabled={loading || !googleData}
           >
             📊 Google Sheets Roster
-          </button>
-          <button 
-            className="rd-btn reset" 
-            onClick={resetToGoogleOrCSV} 
-            disabled={loading || saving || resetting || !googleData}
-          >
-            {resetting ? 'Resetting…' : '↺ Reset to Google/CSV'}
           </button>
         </div>
       </div>
