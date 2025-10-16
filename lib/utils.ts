@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DATA_DIR } from './constants';
+import { parse } from 'csv-parse/sync';
 
 /**
  * Ensure data directory exists (idempotent).
@@ -102,8 +103,32 @@ export function extractMonthFromHeaders(headers: string[]): string|null {
   return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
 }
 
+/**
+ * Parse CSV text into 2D array with proper handling of quoted fields.
+ * Uses csv-parse library which correctly handles RFC 4180 CSV format.
+ */
 export function parseCsv(text: string): string[][] {
-  return text.split(/\r?\n/).map(r=>r.split(','));
+  try {
+    const records = parse(text, {
+      relax_column_count: true, // Allow rows with varying column counts
+      skip_empty_lines: true,
+      trim: true, // Trim whitespace from values
+      quote: '"', // Handle double-quoted fields
+      escape: '"', // Handle escaped quotes
+      bom: true, // Handle BOM if present
+      relax_quotes: true // Be lenient with quotes
+    });
+    
+    // The csv-parse library already handles quotes and trimming correctly
+    // Just ensure all values are strings and trimmed
+    return records.map((row: any[]) => 
+      row.map((cell: any) => String(cell || '').trim())
+    );
+  } catch (e) {
+    console.error('CSV parsing error:', e);
+    // Fallback to simple split if parsing fails
+    return text.split(/\r?\n/).map(r=>r.split(',').map(v=>v.trim()));
+  }
 }
 
 export function formatDateHeader(date: Date) {

@@ -22,13 +22,30 @@ export async function POST(req: Request) {
     const fileName = `${monthYear}.csv`;
     const filePath = path.join(ROSTER_TEMPLATES_DIR, fileName);
 
-    // Convert schedule to CSV format
-    // Header: Employee ID, Employee Name, Team, Date1, Date2, ...
+    // Convert schedule to CSV format that matches CSV Import expectations
+    // CSV Import expects: Team, Name, ID, Date1, Date2, ...
     const csvLines: string[] = [];
     
-    // Build header with date columns (90 days)
-    const dateHeaders = Array.from({ length: 90 }, (_, i) => `Day${i + 1}`);
-    csvLines.push(['Employee ID', 'Employee Name', 'Team', ...dateHeaders].join(','));
+    // Parse monthYear to generate date headers (e.g., "1Oct", "2Oct", ...)
+    const [monthName, yearStr] = monthYear.split('-');
+    const year = parseInt(yearStr);
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthIndex = monthNames.findIndex(m => m === monthName);
+    
+    if (monthIndex === -1) {
+      return NextResponse.json({ success: false, error: 'Invalid month name' }, { status: 400 });
+    }
+
+    // Generate date headers for the entire month
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    const monthAbbr = monthName.substring(0, 3); // e.g., "Nov" from "November"
+    const dateHeaders: string[] = [];
+    for (let day = 1; day <= lastDay; day++) {
+      dateHeaders.push(`${day}${monthAbbr}`);
+    }
+    
+    // Build header: Team, Name, ID, Date1, Date2, ...
+    csvLines.push(['Team', 'Name', 'ID', ...dateHeaders].join(','));
 
     // Add employee rows
     const employeeMap = new Map(employees?.map((e: any) => [e.id, e]) || []);
@@ -42,11 +59,26 @@ export async function POST(req: Request) {
       // Escape CSV values that contain commas
       const escapeCsv = (val: string) => val.includes(',') ? `"${val}"` : val;
       
+      // Map shifts to the month's dates
+      // Calculate day offset for the target month from today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const firstDayOfMonth = new Date(year, monthIndex, 1);
+      const diffDays = Math.floor((firstDayOfMonth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Extract shifts for this month's dates
+      const monthShifts: string[] = [];
+      for (let day = 1; day <= lastDay; day++) {
+        const dateIdx = diffDays + day - 1; // Index in the 90-day schedule
+        const shift = (dateIdx >= 0 && dateIdx < shiftArray.length) ? shiftArray[dateIdx] : '';
+        monthShifts.push(escapeCsv(shift || ''));
+      }
+      
       const row = [
-        escapeCsv(empId),
-        escapeCsv(name),
         escapeCsv(team),
-        ...shiftArray.map(s => escapeCsv(s || ''))
+        escapeCsv(name),
+        escapeCsv(empId),
+        ...monthShifts
       ];
       csvLines.push(row.join(','));
     }

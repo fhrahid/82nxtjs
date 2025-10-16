@@ -38,6 +38,39 @@ export function loadAll() {
   mergeDisplay();
 }
 
+/**
+ * Reload all data from disk to refresh in-memory cache.
+ * This should be called after any external file modifications
+ * (e.g., direct file writes, hard reset, template sync).
+ */
+export function reloadAll() {
+  ensureDataDir();
+  
+  // Reset to default values first
+  const defaultGoogle: RosterData = {teams:{}, headers:[], allEmployees:[]};
+  const defaultAdmin: RosterData = {teams:{}, headers:[], allEmployees:[]};
+  const defaultModified: ModifiedShiftsData = {modifications:[], monthly_stats:{}};
+  const defaultLinks: GoogleLinks = {};
+  const defaultRequests: ScheduleRequestsFile = {
+    shift_change_requests: [],
+    swap_requests: [],
+    approved_count: 0,
+    pending_count: 0
+  };
+  const defaultSettings = {autoSyncEnabled: false};
+  
+  // Load fresh data from files
+  googleData = readJSON(GOOGLE_DATA_FILE, defaultGoogle);
+  adminData = readJSON(ADMIN_DATA_FILE, defaultAdmin);
+  modifiedShifts = readJSON(MODIFIED_SHIFTS_FILE, defaultModified);
+  googleLinks = readJSON(GOOGLE_LINKS_FILE, defaultLinks);
+  scheduleRequests = readJSON(SCHEDULE_REQUESTS_FILE, defaultRequests);
+  settings = readJSON(SETTINGS_FILE, defaultSettings);
+  
+  // Rebuild display data
+  mergeDisplay();
+}
+
 export function saveGoogle() { writeJSON(GOOGLE_DATA_FILE, googleData); }
 export function saveAdmin() { writeJSON(ADMIN_DATA_FILE, adminData); }
 export function saveModified() { writeJSON(MODIFIED_SHIFTS_FILE, modifiedShifts); }
@@ -136,6 +169,7 @@ function deduplicateEmployeeTeamChanges(data: RosterData) {
     // Step 3: Determine the "promoted" team (team with most recent schedule data)
     let promotedTeam: string | null = null;
     let latestScheduleIndex = -1;
+    let promotedName: string = entries[0].employee.name; // Default to first entry's name
     
     entries.forEach(({ team, employee }) => {
       // Find the last non-empty schedule entry
@@ -145,15 +179,17 @@ function deduplicateEmployeeTeamChanges(data: RosterData) {
           if (i > latestScheduleIndex) {
             latestScheduleIndex = i;
             promotedTeam = team;
+            promotedName = employee.name; // Use name from entry with most recent data
           }
           break;
         }
       }
     });
     
-    // If no promoted team found (all schedules are empty), use the last team in entries
+    // If no promoted team found (all schedules are empty), use the last team/name in entries
     if (!promotedTeam) {
       promotedTeam = entries[entries.length - 1].team;
+      promotedName = entries[entries.length - 1].employee.name;
     }
     
     // Step 4: Merge all schedule data into the promoted team entry
@@ -169,8 +205,9 @@ function deduplicateEmployeeTeamChanges(data: RosterData) {
       });
     });
     
-    // Update the promoted entry with merged schedule
+    // Update the promoted entry with merged schedule and latest name
     promotedEntry.employee.schedule = mergedSchedule;
+    promotedEntry.employee.name = promotedName; // Use the most recent name
     promotedEntry.employee.currentTeam = promotedTeam;
     promotedEntry.employee.team = promotedTeam;
     

@@ -39,3 +39,4 @@ backups
 *backup*.tsx
 *backup*.tsnode_modules/
 .next/
+data/*.json

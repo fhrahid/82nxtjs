@@ -109,7 +109,8 @@ export function mergeCsvIntoGoogle(existing: RosterData, rawRows: string[][]) {
       
       const existingEmp = existing.teams[team].find(e=>e.id===imp.id);
       if (existingEmp) {
-        // Update existing employee in current team
+        // Update existing employee in current team - update name, team, and schedule
+        existingEmp.name = imp.name; // Always update name to latest from CSV
         existingEmp.currentTeam = team;
         existingEmp.team = team;
         while (existingEmp.schedule.length < newHeaders.length) existingEmp.schedule.push('');
