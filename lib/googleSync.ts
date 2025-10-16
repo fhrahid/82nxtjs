@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { getGoogleLinks, setGoogle } from './dataStore';
 import { RosterData } from './types';
+import { parseCsv } from './utils';
 
 export async function syncGoogleSheets(): Promise<{ employees:number; sheets:number }> {
   const links = getGoogleLinks();
@@ -24,27 +25,37 @@ export async function syncGoogleSheets(): Promise<{ employees:number; sheets:num
 }
 
 function parseOne(csvText: string): RosterData {
-  const lines = csvText.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-  if (lines.length < 3) return { teams:{}, headers:[], allEmployees:[] };
-  const headerLine = lines[1].split(',');
-  const dateHeaders = headerLine.slice(3).map(h=>h.replace(/"/g,'').trim());
+  const rows = parseCsv(csvText);
+  if (rows.length < 3) return { teams:{}, headers:[], allEmployees:[] };
+  
+  // Header row is at index 1 (row 2 in spreadsheet)
+  const headerRow = rows[1];
+  const dateHeaders = headerRow.slice(3);
 
   const teams: Record<string, any[]> = {};
   let currentTeam = '';
-  for (let i=2;i<lines.length;i++) {
-    const cols = lines[i].split(',');
+  
+  // Data rows start at index 2 (row 3 in spreadsheet)
+  for (let i = 2; i < rows.length; i++) {
+    const cols = rows[i];
     if (cols.length < 4) continue;
-    if (cols[0].trim()) currentTeam = cols[0].trim();
+    
+    // If first column has data, it's a new team
+    if (cols[0]) currentTeam = cols[0];
     if (!teams[currentTeam]) teams[currentTeam] = [];
+    
     const employee = {
-      name: cols[1].trim(),
-      id: cols[2].trim(),
+      name: cols[1],
+      id: cols[2],
       team: currentTeam,
       currentTeam,
-      schedule: cols.slice(3).map(s=>s.trim())
+      schedule: cols.slice(3)
     };
+    
+    // Only add if employee has both name and ID
     if (employee.name && employee.id) teams[currentTeam].push(employee);
   }
+  
   const allEmployees: any[] = [];
   Object.values(teams).forEach(emps => emps.forEach(e=>allEmployees.push(e)));
   return { teams, headers: dateHeaders, allEmployees };
