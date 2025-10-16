@@ -260,6 +260,20 @@ export default function AdminRosterDataModal({ open, onClose, headers, teams, on
     };
   }, [editingCell, computePopoverPosition]);
 
+  // Close popover when clicking outside
+  useEffect(() => {
+    if (!editingCell) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popRef.current && !popRef.current.contains(e.target as Node)) {
+        setEditingCell(null);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [editingCell]);
+
   function handleCellClick(e: React.MouseEvent<HTMLTableCellElement>, empId: string, dateIdx: number) {
     if (saving) return;
     anchorElRef.current = e.currentTarget;

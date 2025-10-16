@@ -201,6 +201,20 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
     };
   }, [editingCell, computePopoverPosition]);
 
+  // Close popover when clicking outside
+  useEffect(() => {
+    if (!editingCell) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popRef.current && !popRef.current.contains(e.target as Node)) {
+        setEditingCell(null);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [editingCell]);
+
   // Handlers
   function handleCellClick(e: React.MouseEvent<HTMLTableCellElement>, empId: string, dateIdx: number) {
     anchorElRef.current = e.currentTarget;
@@ -218,9 +232,28 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
   async function handleSave() {
     setSaving(true);
     try {
-      await onSave(schedule);
-      alert('Roster template saved successfully!');
-      onClose();
+      // Save to CSV via API
+      const response = await fetch('/api/admin/save-roster-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schedule,
+          monthYear: displayMonthName.replace(' ', '-'), // e.g., "November-2025"
+          employees: allEmployees,
+          monthOffset
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`Template saved successfully as ${result.fileName}!`);
+        // Also call the parent onSave if provided
+        await onSave(schedule);
+        onClose();
+      } else {
+        alert(`Failed to save template: ${result.error}`);
+      }
     } catch (e) {
       alert('Failed to save roster template');
       console.error(e);
@@ -404,7 +437,7 @@ export default function RosterTemplateModal({ open, onClose, employees, onSave, 
                       {emp.id}
                       {emp.team && (
                         <span
-                          onClick={(e)=>{ e.stopPropagation(); if (onChangeTeam) setEditingTeam({empId: emp.id, currentTeam: emp.team}); }}
+                          onClick={(e)=>{ e.stopPropagation(); if (onChangeTeam && emp.team) setEditingTeam({empId: emp.id, currentTeam: emp.team}); }}
                           className={`rtm-team-pill ${onChangeTeam ? 'clickable' : ''}`}
                           title={onChangeTeam ? 'Click to change team' : emp.team}
                         >
