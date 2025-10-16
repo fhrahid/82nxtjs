@@ -50,13 +50,13 @@ export async function POST(req: Request) {
 
         if (records.length === 0) continue;
 
-        // Extract month and year from the CSV
-        const firstRecord = records[0];
-        const monthName = firstRecord['Month'];
-        const yearStr = firstRecord['Year'];
+        // The new format has headers: Team,Name,ID,1Nov,2Nov,3Nov,...
+        // Extract month and year from filename (e.g., "November-2025.csv")
+        const fileNameWithoutExt = fileName.replace('.csv', '');
+        const [monthName, yearStr] = fileNameWithoutExt.split('-');
         
         if (!monthName || !yearStr) {
-          console.error(`Template ${fileName} is missing Month or Year columns`);
+          console.error(`Template ${fileName} has invalid filename format. Expected: MonthName-Year.csv`);
           continue;
         }
 
@@ -76,26 +76,29 @@ export async function POST(req: Request) {
         const targetMonthStart = new Date(year, month, 1);
         const offsetDays = Math.floor((targetMonthStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Get column names for dates (skip Employee ID, Employee Name, Team, Month, Year)
+        // Get column names for dates (skip Team, Name, ID, Date row)
+        const firstRecord = records[0];
         const columns = Object.keys(firstRecord);
         const dateColumns = columns.filter(col => 
-          !['Employee ID', 'Employee Name', 'Team', 'Month', 'Year'].includes(col)
+          !['Team', 'Name', 'ID', 'Date'].includes(col) && col.trim()
         );
 
         // Process each employee in the template
         for (const record of records) {
-          const empId = record['Employee ID'];
-          const empName = record['Employee Name'];
           const team = record['Team'];
+          const empName = record['Name'];
+          const empId = record['ID'];
 
-          if (!empId) continue;
+          if (!empId || !empName) continue;
+          // Skip the date row (has "Date" in ID column)
+          if (empId === 'Date') continue;
 
           // Get or create employee
           let employee = employeeMap.get(empId);
           if (!employee) {
             employee = {
               id: empId,
-              name: empName || empId,
+              name: empName,
               team: team || 'Unassigned',
               schedule: []
             };

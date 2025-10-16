@@ -28,20 +28,24 @@ export async function POST(req: Request) {
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const month = monthNames.indexOf(monthName);
 
-    // Convert schedule to CSV format with actual dates
+    // Convert schedule to CSV format matching the expected import format
+    // Expected format: Team,Name,ID,1Oct,2Oct,3Oct,...
     const csvLines: string[] = [];
     
-    // Build header with actual dates for the month
+    // Build header with simple date format (e.g., "1Nov", "2Nov", "3Nov")
     const lastDay = new Date(year, month + 1, 0).getDate();
     const dateHeaders: string[] = [];
-    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const monthAbbr = monthName.substring(0, 3); // Get first 3 letters (e.g., "Nov" from "November")
     
     for (let d = 1; d <= lastDay; d++) {
-      const date = new Date(year, month, d);
-      dateHeaders.push(`${dayNames[date.getDay()]} ${d} ${monthName}`);
+      dateHeaders.push(`${d}${monthAbbr}`);
     }
     
-    csvLines.push(['Employee ID', 'Employee Name', 'Team', 'Month', 'Year', ...dateHeaders].join(','));
+    // First row: Team,Name,ID,1Nov,2Nov,3Nov,...
+    csvLines.push(['Team', 'Name', 'ID', ...dateHeaders].join(','));
+    
+    // Second row: empty (date row convention)
+    csvLines.push(['', '', 'Date', ...Array(lastDay).fill('')].join(','));
 
     // Add employee rows
     const employeeMap = new Map(employees?.map((e: any) => [e.id, e]) || []);
@@ -69,11 +73,9 @@ export async function POST(req: Request) {
       const escapeCsv = (val: string) => val.includes(',') ? `"${val}"` : val;
       
       const row = [
-        escapeCsv(empId),
-        escapeCsv(name),
         escapeCsv(team),
-        monthName,
-        yearStr,
+        escapeCsv(name),
+        escapeCsv(empId),
         ...monthShifts.map(s => escapeCsv(s || ''))
       ];
       csvLines.push(row.join(','));

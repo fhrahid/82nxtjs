@@ -31,21 +31,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Empty template file' }, { status: 400 });
     }
 
-    // Extract month and year from the first record
+    // The new format has headers: Team,Name,ID,1Nov,2Nov,3Nov,...
+    // We need to extract the month/year from the date headers and the filename
     const firstRecord = records[0];
-    const monthName = firstRecord['Month'];
-    const yearStr = firstRecord['Year'];
-
-    if (!monthName || !yearStr) {
-      return NextResponse.json({ success: false, error: 'Template is missing Month or Year' }, { status: 400 });
+    const columns = Object.keys(firstRecord);
+    
+    // Extract month and year from filename (e.g., "November-2025.csv")
+    const fileNameWithoutExt = fileName.replace('.csv', '');
+    const [monthName, yearStr] = fileNameWithoutExt.split('-');
+    const year = parseInt(yearStr);
+    
+    if (!monthName || !yearStr || isNaN(year)) {
+      return NextResponse.json({ success: false, error: 'Invalid filename format. Expected: MonthName-Year.csv' }, { status: 400 });
     }
 
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const month = monthNames.indexOf(monthName);
-    const year = parseInt(yearStr);
 
-    if (month === -1 || isNaN(year)) {
-      return NextResponse.json({ success: false, error: 'Invalid month or year in template' }, { status: 400 });
+    if (month === -1) {
+      return NextResponse.json({ success: false, error: 'Invalid month in filename' }, { status: 400 });
     }
 
     // Calculate month offset from current month
@@ -60,10 +64,10 @@ export async function POST(req: Request) {
     const targetMonthStart = new Date(year, month, 1);
     const offsetDays = Math.floor((targetMonthStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Get column names for dates (skip Employee ID, Employee Name, Team, Month, Year)
-    const columns = Object.keys(firstRecord);
+    // Get column names for dates (skip Team, Name, ID, Date row)
+    // Date columns are like "1Nov", "2Nov", "3Nov"
     const dateColumns = columns.filter(col => 
-      !['Employee ID', 'Employee Name', 'Team', 'Month', 'Year'].includes(col)
+      !['Team', 'Name', 'ID', 'Date'].includes(col) && col.trim()
     );
 
     // Build employees and schedule data
@@ -71,16 +75,18 @@ export async function POST(req: Request) {
     const schedule: Record<string, string[]> = {};
 
     for (const record of records) {
-      const empId = record['Employee ID'];
-      const empName = record['Employee Name'];
       const team = record['Team'];
+      const empName = record['Name'];
+      const empId = record['ID'];
 
-      if (!empId) continue;
+      if (!empId || !empName) continue;
+      // Skip the date row (has "Date" in ID column)
+      if (empId === 'Date') continue;
 
       // Create employee object
       employees.push({
         id: empId,
-        name: empName || empId,
+        name: empName,
         team: team || 'Unassigned',
         schedule: []
       });
