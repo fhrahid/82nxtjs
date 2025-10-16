@@ -105,7 +105,7 @@ export function extractMonthFromHeaders(headers: string[]): string|null {
 
 /**
  * Parse CSV text into 2D array with proper handling of quoted fields.
- * Trims whitespace from all values and removes surrounding quotes.
+ * Uses csv-parse library which correctly handles RFC 4180 CSV format.
  */
 export function parseCsv(text: string): string[][] {
   try {
@@ -115,21 +115,14 @@ export function parseCsv(text: string): string[][] {
       trim: true, // Trim whitespace from values
       quote: '"', // Handle double-quoted fields
       escape: '"', // Handle escaped quotes
-      bom: true // Handle BOM if present
+      bom: true, // Handle BOM if present
+      relax_quotes: true // Be lenient with quotes
     });
     
-    // Further trim any remaining whitespace and remove quotes from each cell
-    return records.map((row: string[]) => 
-      row.map((cell: string) => {
-        // Trim the cell
-        let cleaned = cell.trim();
-        // Remove surrounding quotes if present
-        if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
-          cleaned = cleaned.slice(1, -1);
-        }
-        // Trim again after removing quotes (in case there's whitespace inside quotes)
-        return cleaned.trim();
-      })
+    // The csv-parse library already handles quotes and trimming correctly
+    // Just ensure all values are strings and trimmed
+    return records.map((row: any[]) => 
+      row.map((cell: any) => String(cell || '').trim())
     );
   } catch (e) {
     console.error('CSV parsing error:', e);
