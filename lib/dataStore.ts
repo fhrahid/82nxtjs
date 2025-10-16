@@ -169,6 +169,7 @@ function deduplicateEmployeeTeamChanges(data: RosterData) {
     // Step 3: Determine the "promoted" team (team with most recent schedule data)
     let promotedTeam: string | null = null;
     let latestScheduleIndex = -1;
+    let promotedName: string = entries[0].employee.name; // Default to first entry's name
     
     entries.forEach(({ team, employee }) => {
       // Find the last non-empty schedule entry
@@ -178,15 +179,17 @@ function deduplicateEmployeeTeamChanges(data: RosterData) {
           if (i > latestScheduleIndex) {
             latestScheduleIndex = i;
             promotedTeam = team;
+            promotedName = employee.name; // Use name from entry with most recent data
           }
           break;
         }
       }
     });
     
-    // If no promoted team found (all schedules are empty), use the last team in entries
+    // If no promoted team found (all schedules are empty), use the last team/name in entries
     if (!promotedTeam) {
       promotedTeam = entries[entries.length - 1].team;
+      promotedName = entries[entries.length - 1].employee.name;
     }
     
     // Step 4: Merge all schedule data into the promoted team entry
@@ -202,8 +205,9 @@ function deduplicateEmployeeTeamChanges(data: RosterData) {
       });
     });
     
-    // Update the promoted entry with merged schedule
+    // Update the promoted entry with merged schedule and latest name
     promotedEntry.employee.schedule = mergedSchedule;
+    promotedEntry.employee.name = promotedName; // Use the most recent name
     promotedEntry.employee.currentTeam = promotedTeam;
     promotedEntry.employee.team = promotedTeam;
     
